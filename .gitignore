@@ -1,0 +1,17 @@
+node_modules/
+
+# Generated build artifacts per implementation
+problems/**/*.dtr
+problems/**/*.agdai
+problems/**/jAgda.*.js
+problems/**/agda-rts.js
+problems/**/build/
+
+# Dafny: only the source .dfy is checked in; the compiled .js is regenerated.
+# (The .js next to each .dfy is the build output.)
+problems/factorial/dafny/Factorial.js
+problems/reverse/dafny/Reverse.js
+problems/insertion-sort/dafny/InsertionSort.js
+
+# Generator outputs (regenerable)
+outputs/

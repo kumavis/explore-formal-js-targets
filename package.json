@@ -1,0 +1,17 @@
+{
+  "name": "explore-formal-js-targets",
+  "version": "0.0.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "Comparing Dafny / Agda / Idris2 JavaScript compile targets",
+  "scripts": {
+    "build": "node generator/build.js",
+    "ses": "node generator/ses-check.js",
+    "report": "node generator/report.js",
+    "all": "node generator/build.js && node generator/ses-check.js && node generator/report.js"
+  },
+  "dependencies": {
+    "bignumber.js": "^9.1.2",
+    "ses": "^1.10.0"
+  }
+}
