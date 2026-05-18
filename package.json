@@ -7,10 +7,14 @@
   "scripts": {
     "build": "node generator/build.js",
     "ses": "node generator/ses-check.js",
+    "ffi": "node generator/ffi-probe.js",
+    "bundle": "node generator/bundle.mjs",
     "report": "node generator/report.js",
-    "all": "node generator/build.js && node generator/ses-check.js && node generator/report.js"
+    "all": "node generator/build.js && node generator/ses-check.js && node generator/ffi-probe.js && node generator/bundle.mjs && node generator/report.js"
   },
   "dependencies": {
+    "@endo/bundle-source": "^4.3.0",
+    "@endo/import-bundle": "^1.6.1",
     "bignumber.js": "^9.1.2",
     "ses": "^1.10.0"
   }

@@ -12,8 +12,34 @@ const DOCS_ROOT = path.join(ROOT, 'docs');
 
 const LANG_FENCE = { Dafny: 'dafny', Agda: 'agda', Idris2: 'idris', JS: 'js' };
 
+// Whether each tool's output uses module-loader `require()` at top level and
+// therefore needs a bundler before it can run inside a SES Compartment.
+const NEEDS_BUNDLING = { Dafny: true, Agda: true, Idris2: false };
+
+function emoji(cls) {
+  if (cls === 'pass') return '✅';
+  if (cls === 'n/a' || cls === 'not-needed') return '—';
+  return '❌';
+}
+
 function loadProblem(id) {
   return JSON.parse(fs.readFileSync(path.join(OUT_ROOT, id, 'results.json'), 'utf8'));
+}
+
+let BUNDLES = {};
+try { BUNDLES = JSON.parse(fs.readFileSync(path.join(OUT_ROOT, 'bundles.json'), 'utf8')); }
+catch (_) { BUNDLES = {}; }
+
+function bundleFor(problemId, lang) {
+  return (BUNDLES[problemId] || []).find((b) => b.tool === lang) || null;
+}
+
+function classifyBundle(b) {
+  if (!b) return 'n/a';
+  if (b.prepareError || b.bundleError) return 'bundle-failed';
+  if (b.importError) return 'import-failed';
+  if (b.sortError) return 'sort-failed';
+  return 'pass';
 }
 
 function fmtNum(n) {
@@ -43,16 +69,42 @@ function renderProblem(p) {
   lines.push('');
   lines.push('## SES compatibility');
   lines.push('');
-  lines.push('| Language | Static findings | `lockdown()` + `require()` | `Compartment.evaluate()` |');
-  lines.push('| --- | --- | --- | --- |');
+  lines.push('| Language | Needs bundling | Static scan | `lockdown()` + `require()` | Raw `Compartment.evaluate()` | Bundled (`@endo/bundle-source` → `importBundle`) |');
+  lines.push('| --- | :---: | :---: | :---: | :---: | :---: |');
   for (const r of p.results) {
     const ses = r.ses || {};
     const sf = (ses.staticFindings || []).map((s) => s.id).join(', ') || 'none';
-    const lr = ses.lockdownRequire ? ses.lockdownRequire.classification : '?';
-    const ce = ses.compartmentEvaluate ? ses.compartmentEvaluate.classification : '?';
-    lines.push(`| ${r.language} | ${sf} | ${lr} | ${ce} |`);
+    const lr = ses.lockdownRequire ? ses.lockdownRequire.classification : 'n/a';
+    const ce = ses.compartmentEvaluate ? ses.compartmentEvaluate.classification : 'n/a';
+    const needs = NEEDS_BUNDLING[r.language] ? '**yes**' : 'no';
+    const bundle = bundleFor(p.problem.id, r.language);
+    const bcls = classifyBundle(bundle);
+    const sfMark = sf === 'none' ? '✅ clean' : `❌ ${sf}`;
+    lines.push(`| ${r.language} | ${needs} | ${sfMark} | ${emoji(lr)} ${lr} | ${emoji(ce)} ${ce} | ${emoji(bcls)} ${bcls} |`);
   }
   lines.push('');
+  // Per-cell bundle details
+  const anyBundle = p.results.some((r) => bundleFor(p.problem.id, r.language));
+  if (anyBundle) {
+    lines.push('### Bundle details');
+    lines.push('');
+    lines.push('| Language | Bundle bytes (base64) | Imported keys | Notes |');
+    lines.push('| --- | ---: | --- | --- |');
+    for (const r of p.results) {
+      const b = bundleFor(p.problem.id, r.language);
+      if (!b) { lines.push(`| ${r.language} | — | — | not attempted |`); continue; }
+      const note =
+        b.prepareError ? `prepare error: \`${b.prepareError.slice(0, 120)}\`` :
+        b.bundleError  ? `bundle error: \`${b.bundleError.slice(0, 120)}\`` :
+        b.importError  ? `import error: \`${b.importError.slice(0, 120)}\`` :
+        b.sortError    ? `sort-call error: \`${b.sortError.slice(0, 120)}\`` :
+        b.sortMatches  ? `sort output matches expected` :
+        b.importedKeys ? `imported keys: ${b.importedKeys.join(', ')}` :
+        '';
+      lines.push(`| ${r.language} | ${b.bundleBytes ? fmtNum(b.bundleBytes) : '—'} | ${b.importedKeys ? b.importedKeys.join(', ') : '—'} | ${note} |`);
+    }
+    lines.push('');
+  }
   for (const r of p.results) {
     lines.push('---');
     lines.push('');
@@ -142,17 +194,23 @@ function renderEvaluation(loaded) {
   lines.push('');
   lines.push('## Aggregate metrics');
   lines.push('');
-  lines.push('| Problem | Lang | src LOC | compiled bytes | static SES findings | lockdown+require | compartment |');
-  lines.push('| --- | --- | ---: | ---: | --- | --- | --- |');
+  lines.push('| Problem | Lang | src LOC | compiled bytes | needs bundling | static scan | lockdown+require | raw compartment | bundled compartment |');
+  lines.push('| --- | --- | ---: | ---: | :---: | :---: | :---: | :---: | :---: |');
   for (const p of loaded) {
     for (const r of p.results) {
       const ses = r.ses || {};
       const sf = (ses.staticFindings || []).map((s) => s.id).join(', ') || 'none';
-      const lr = ses.lockdownRequire ? ses.lockdownRequire.classification : '?';
-      const ce = ses.compartmentEvaluate ? ses.compartmentEvaluate.classification : '?';
-      lines.push(`| ${p.problem.id} | ${r.language} | ${r.sourceLines} | ${fmtNum(r.compiledBytes)} | ${sf} | ${lr} | ${ce} |`);
+      const lr = ses.lockdownRequire ? ses.lockdownRequire.classification : 'n/a';
+      const ce = ses.compartmentEvaluate ? ses.compartmentEvaluate.classification : 'n/a';
+      const needs = NEEDS_BUNDLING[r.language] ? '**yes**' : 'no';
+      const b = bundleFor(p.problem.id, r.language);
+      const bcls = classifyBundle(b);
+      const sfMark = sf === 'none' ? '✅' : '❌';
+      lines.push(`| ${p.problem.id} | ${r.language} | ${r.sourceLines} | ${fmtNum(r.compiledBytes)} | ${needs} | ${sfMark} | ${emoji(lr)} | ${emoji(ce)} | ${emoji(bcls)} |`);
     }
   }
+  lines.push('');
+  lines.push('Legend: ✅ pass, ❌ fail, — not applicable.');
   lines.push('');
   lines.push('See [hand-written notes](../EVALUATION.md) for the qualitative analysis (FFI ergonomics, readability commentary, etc.).');
   return lines.join('\n');

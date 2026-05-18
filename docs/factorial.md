@@ -12,11 +12,19 @@ Recursive factorial function with a proof that the result is at least 1. Dafny u
 
 ## SES compatibility
 
-| Language | Static findings | `lockdown()` + `require()` | `Compartment.evaluate()` |
-| --- | --- | --- | --- |
-| Dafny | none | pass | evaluate-failed |
-| Agda | none | pass | evaluate-failed |
-| Idris2 | none | pass | pass |
+| Language | Needs bundling | Static scan | `lockdown()` + `require()` | Raw `Compartment.evaluate()` | Bundled (`@endo/bundle-source` → `importBundle`) |
+| --- | :---: | :---: | :---: | :---: | :---: |
+| Dafny | **yes** | ✅ clean | ✅ pass | ❌ evaluate-failed | ❌ import-failed |
+| Agda | **yes** | ✅ clean | ✅ pass | ❌ evaluate-failed | ✅ pass |
+| Idris2 | no | ✅ clean | ✅ pass | ✅ pass | ✅ pass |
+
+### Bundle details
+
+| Language | Bundle bytes (base64) | Imported keys | Notes |
+| --- | ---: | --- | --- |
+| Dafny | 162,956 | — | import error: `secure mode %SharedMath%.random() throws` |
+| Agda | 37,948 | IsPositive, factorial, natToString, putStrLn, main, default, mul-pos, factorial-pos | imported keys: IsPositive, factorial, natToString, putStrLn, main, default, mul-pos, factorial-pos |
+| Idris2 | 15,380 | factorial, default | imported keys: factorial, default |
 
 ---
 

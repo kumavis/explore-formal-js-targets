@@ -12,11 +12,19 @@ Insertion sort over a list of naturals. Dafny verifies both sortedness AND multi
 
 ## SES compatibility
 
-| Language | Static findings | `lockdown()` + `require()` | `Compartment.evaluate()` |
-| --- | --- | --- | --- |
-| Dafny | none | pass | evaluate-failed |
-| Agda | none | pass | evaluate-failed |
-| Idris2 | none | pass | pass |
+| Language | Needs bundling | Static scan | `lockdown()` + `require()` | Raw `Compartment.evaluate()` | Bundled (`@endo/bundle-source` → `importBundle`) |
+| --- | :---: | :---: | :---: | :---: | :---: |
+| Dafny | **yes** | ✅ clean | ✅ pass | ❌ evaluate-failed | ❌ import-failed |
+| Agda | **yes** | ✅ clean | ✅ pass | ❌ evaluate-failed | ✅ pass |
+| Idris2 | no | ✅ clean | ✅ pass | ✅ pass | ✅ pass |
+
+### Bundle details
+
+| Language | Bundle bytes (base64) | Imported keys | Notes |
+| --- | ---: | --- | --- |
+| Dafny | 163,256 | — | import error: `secure mode %SharedMath%.random() throws` |
+| Agda | 43,452 | Order, Sorted, compare, insert, sort, showList, putStrLn, main, default, _≤_, _≤*_, ≤-trans, ≤*-trans, insert-≤*, insert-sorted, sort-sorted | sort output matches expected |
+| Idris2 | 18,240 | sort, default | sort output matches expected |
 
 ---
 

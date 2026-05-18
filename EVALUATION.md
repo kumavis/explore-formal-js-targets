@@ -84,25 +84,39 @@ Constructors collapse to small JS objects with a `.h` tag and `.a1/.a2/...` fiel
 
 ## 2. SES (Hardened JavaScript) compatibility
 
-The harness probes three independent things; see `outputs/<problem>/results.json` and the per-problem docs for raw output. Aggregate result across all 9 (problem × tool) cells:
+The harness probes four independent things; see `outputs/<problem>/results.json`, `outputs/bundles.json`, and the per-problem docs for raw output.
 
 | Probe | Dafny | Agda | Idris2 |
 | --- | :---: | :---: | :---: |
-| Static scan for `eval`, `new Function`, primordial mutation, `with`, `__proto__`, etc. | ✅ none | ✅ none | ✅ none |
+| Static scan for `eval`, `new Function`, primordial mutation, `with`, `__proto__`, etc. | ✅ clean | ✅ clean | ✅ clean |
 | `lockdown()` then `require()` the entry file | ✅ pass | ✅ pass | ✅ pass |
-| `lockdown()` then `Compartment.evaluate(source)` | ❌ require not available | ❌ require not available | ✅ pass |
+| `lockdown()` then `Compartment.evaluate(source)` raw | ❌ require not available | ❌ require not available | ✅ pass |
+| `@endo/bundle-source` → `importBundle` into a Compartment | ❌ `Math.random()` blocked | ✅ pass | ✅ pass |
+| Needs bundling? | yes | yes | **no** |
 
-**All three tools emit code that runs unmodified under a SES-locked-down Node process** — no compiler accidentally generates a SES-incompatible idiom in the patterns I scanned for. That's the easy positive answer.
+**All three tools emit code that survives a SES-locked-down Node process** — no compiler accidentally generates a SES-incompatible idiom in the patterns I scanned for. That's the easy positive answer.
 
-The Compartment failures are *not* a SES violation in the verified code — they're a packaging problem: Dafny calls `require('bignumber.js')` at the top of the file and Agda's per-module emission means every output module does `require('agda-rts')` + `require('jAgda.<Sibling>')`. A SES Compartment doesn't provide `require` by default. To run either in a Compartment you'd need to bundle them first (esbuild, rollup) or endow the Compartment with a custom resolver.
+**Raw `Compartment.evaluate` fails for Dafny and Agda** because Dafny calls `require('bignumber.js')` at the top of its emitted file and Agda's per-module emission means every output module does `require('agda-rts')` + `require('jAgda.<Sibling>')`. A SES Compartment doesn't provide `require` by default. This isn't a SES violation in the verified code — it's a packaging problem.
 
-**Idris2 is uniquely Compartment-friendly today** because its `--cg node` output is one self-contained file with no `require` at top scope (the only `require('process').argv` is inside the executable's main and even that's avoidable by reading `argv` from an endowment).
+**Idris2 passes raw `Compartment.evaluate` out of the box** because its `--cg node` output is one self-contained file with no `require` at top scope.
+
+### Bundling closes most of the gap — except for Dafny
+
+I ran the Dafny and Agda outputs through `@endo/bundle-source` (Agoric's Endo bundler) and loaded the resulting Endo bundle into a SES Compartment with `@endo/import-bundle`. Both bundle cleanly. The pre-processing required per tool is small enough to inline in `generator/bundle.mjs`:
+
+  - **Dafny:** strip the trailing `Main()` invocation, expose the module-scoped `let`s on `module.exports`, declare `bignumber.js` as a real bundled dependency. *(Bundle succeeds; ~160 KB base64.)*
+  - **Agda:** collect all `jAgda.<Mod>.js` files + `agda-rts.js` into one dir, rewrite bare-specifier requires (`require("agda-rts")`) to relative requires (`require("./agda-rts.js")`), strip the trailing `exports.main(...)` side effect. *(Bundle succeeds; ~38–43 KB base64.)*
+  - **Idris2:** (didn't strictly need bundling, but tried it for parity) strip the shebang and `try { __mainExpression_0() }` invocation, attach the mangled target symbol to `module.exports`. *(Bundle succeeds; ~15–18 KB base64.)*
+
+The Endo bundle imports cleanly for Agda and Idris2 — both produce a usable namespace inside a sealed Compartment and the verified `sort` returns the right answer when called from outside. The Agda namespace even exposes all the *types* (`Sorted`, `Order`, `_≤_`, …) alongside the functions, which is a nice property if you wanted to perform additional reasoning in the host.
+
+**The Dafny bundle imports but blows up at load time** with `secure mode %SharedMath%.random() throws`. The culprit is `bignumber.js`, which calls `Math.random()` during initialization to seed an RNG that *the Dafny program never uses*. Under SES `lockdown()`, the secure `Math` object on `globalThis` removes `random` (you have to opt in to it). So Dafny's runtime dependency is the real SES blocker, and it would fire even after a hypothetical "Dafny emits ESM" upgrade. Workarounds: (a) endow the Compartment with a permissive `Math`, (b) replace `bignumber.js` with native `BigInt` in the Dafny runtime (the runtime is in `_dafny`; this would be a Dafny-side patch), or (c) wrap `bignumber.js`'s init in a try/catch — not great. The cleanest fix is upstream.
 
 ### Specific SES gotchas observed
 
-- **Dafny** sets `BigNumber.config({ MODULO_MODE: BigNumber.EUCLID })` at module load. This mutates a global from the imported lib — fine, but if you're sharing that lib across compartments it's a one-way write.
-- **Agda runtime** (`agda-rts.js`) is small (10 KB) and contains no obvious SES-hostile idioms, but it stores helpers as plain top-level `var`s and `exports.X = …`. Should be fine after bundling.
-- **Idris2** writes a single classfree-style helper (`__lazy`, `__tailRec`, etc.) at top, no primordial touching.
+- **Dafny** sets `BigNumber.config({ MODULO_MODE: BigNumber.EUCLID })` at module load. This mutates global state on the imported lib — fine if every Compartment has its own copy (bundling gives you that), surprising if you share `bignumber.js` across tenants.
+- **Agda runtime** (`agda-rts.js`) is small (10 KB) and contains no SES-hostile idioms; bundling produces a working compartment-loadable artifact with zero workarounds.
+- **Idris2** uses `__lazy`, `__tailRec` etc. as top-level `function`s with no primordial mutation; the Compartment story is the smoothest of the three.
 
 ---
 
@@ -170,11 +184,11 @@ From `generator/ffi-probe.js`:
 
 If the goal is to drop a verified function into an existing JavaScript app — including a SES-locked-down one:
 
-- **Idris2** gives you the most readable JavaScript by a wide margin and is the only one that runs in a SES Compartment out of the box. The catch is that you can't `require()` it as a library: you get an executable.
+- **Idris2** gives you the most readable JavaScript by a wide margin and is the only one that runs in a SES Compartment out of the box (and through `bundle-source` for parity). The catch is that you can't `require()` it as a library: you get an executable.
 
-- **Agda** has the cleanest module-call surface — `require('./jAgda.Foo.js').myFn(...)` Just Works, lists are JS arrays, the runtime is tiny. It's also the only one with a real two-way FFI story (`{-# COMPILE JS … #-}`). You need a bundler before it'll fit in a Compartment, and `main` runs on import.
+- **Agda** has the cleanest module-call surface — `require('./jAgda.Foo.js').myFn(...)` Just Works, lists are JS arrays, the runtime is tiny. It's also the only one with a real two-way FFI story (`{-# COMPILE JS … #-}`). Needs a bundler before it fits in a Compartment, but `@endo/bundle-source` handles it with only the trivial preprocessing in `generator/bundle.mjs` (rewrite bare requires, strip the main side-effect).
 
-- **Dafny** produces the most code per byte of source and the least JS-native output: everything is BigNumber-wrapped, sequences live in their own class, and the top-level uses `let` so the symbols aren't reachable from a host. It runs under `lockdown()`, but exposing functions to external callers needs source manipulation.
+- **Dafny** produces the most code per byte of source and the least JS-native output: everything is BigNumber-wrapped, sequences live in their own class, and the top-level uses `let` so the symbols aren't reachable from a host. It runs under `lockdown()`, bundles cleanly, but the bundle **does not import into a sealed Compartment**: its `bignumber.js` runtime calls `Math.random()` at init time and SES's secure `Math` throws. A real Dafny→SES integration today needs either a `Math` endowment or a patch to swap out `bignumber.js` for native `BigInt`.
 
 For the specific use case "I want to write a verified library and call it from regular JavaScript (or a SES tenant)": **Agda for the library case, Idris2 for the SES-embedded-evaluator case, Dafny only if you also need its specification language and are willing to write a small wrapper.**
 
@@ -186,8 +200,9 @@ For the specific use case "I want to write a verified library and call it from r
 nix develop          # or have dafny / agda / idris2 / nodejs on PATH
 npm install
 node generator/build.js       # compile + run every implementation
-node generator/ses-check.js   # run SES probes
+node generator/ses-check.js   # run SES probes (lockdown+require, Compartment.evaluate)
 node generator/ffi-probe.js   # run FFI probes
+node generator/bundle.mjs     # @endo/bundle-source + importBundle into Compartment
 node generator/report.js      # rebuild docs/<problem>.md
 ```
 
@@ -196,4 +211,6 @@ Files of interest:
 - `problems/<problem>/<tool>/<src>` — the verified sources
 - `outputs/<problem>/results.json` — raw build / run / SES JSON
 - `outputs/ffi-probe.json` — raw FFI probe JSON
+- `outputs/bundles.json` — raw bundle / import-bundle JSON
+- `outputs/bundles/<problem>/<tool>/` — the pre-processed bundle-input directories
 - `docs/<problem>.md` — autogenerated per-problem comparison

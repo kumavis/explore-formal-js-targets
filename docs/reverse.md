@@ -12,11 +12,19 @@ Naive list reverse with the theorem reverse(reverse(xs)) ≡ xs. Dafny proves it
 
 ## SES compatibility
 
-| Language | Static findings | `lockdown()` + `require()` | `Compartment.evaluate()` |
-| --- | --- | --- | --- |
-| Dafny | none | pass | evaluate-failed |
-| Agda | none | pass | evaluate-failed |
-| Idris2 | none | pass | pass |
+| Language | Needs bundling | Static scan | `lockdown()` + `require()` | Raw `Compartment.evaluate()` | Bundled (`@endo/bundle-source` → `importBundle`) |
+| --- | :---: | :---: | :---: | :---: | :---: |
+| Dafny | **yes** | ✅ clean | ✅ pass | ❌ evaluate-failed | ❌ import-failed |
+| Agda | **yes** | ✅ clean | ✅ pass | ❌ evaluate-failed | ✅ pass |
+| Idris2 | no | ✅ clean | ✅ pass | ✅ pass | ✅ pass |
+
+### Bundle details
+
+| Language | Bundle bytes (base64) | Imported keys | Notes |
+| --- | ---: | --- | --- |
+| Dafny | 162,760 | — | import error: `secure mode %SharedMath%.random() throws` |
+| Agda | 38,456 | reverse, showList, putStrLn, main, default, _++_ | imported keys: reverse, showList, putStrLn, main, default, _++_ |
+| Idris2 | 17,596 | reverse, default | imported keys: reverse, default |
 
 ---
 
