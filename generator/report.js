@@ -169,21 +169,6 @@ function renderProblem(p) {
         }
       }
     }
-    if (r.ses) {
-      lines.push('**SES probes:**');
-      lines.push('');
-      const lr = r.ses.lockdownRequire;
-      const ce = r.ses.compartmentEvaluate;
-      lines.push(`- \`lockdown() + require()\`: **${lr.classification}** (exit ${lr.exitCode})`);
-      if (lr.stderr && lr.stderr.trim()) {
-        lines.push('  - stderr: `' + lr.stderr.trim().split('\n')[0].slice(0, 300) + '`');
-      }
-      lines.push(`- \`Compartment.evaluate()\`: **${ce.classification}** (exit ${ce.exitCode})`);
-      if (ce.stderr && ce.stderr.trim()) {
-        lines.push('  - stderr: `' + ce.stderr.trim().split('\n')[0].slice(0, 300) + '`');
-      }
-      lines.push('');
-    }
   }
   return lines.join('\n');
 }

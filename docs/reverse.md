@@ -124,12 +124,6 @@ let Reverse = (function() {
 _dafny.HandleHaltExceptions(() => Reverse.__default.Main(_dafny.UnicodeFromMainArguments(require('process').argv)));
 ```
 
-**SES probes:**
-
-- `lockdown() + require()`: **pass** (exit 0)
-- `Compartment.evaluate()`: **evaluate-failed** (exit 4)
-  - stderr: `EVALUATE_FAILED: require is not a function`
-
 ---
 
 ## Agda
@@ -267,12 +261,6 @@ exports["main"] = exports["putStrLn"](
 ) ) ) ) ) ) );
 ```
 
-**SES probes:**
-
-- `lockdown() + require()`: **pass** (exit 0)
-- `Compartment.evaluate()`: **evaluate-failed** (exit 4)
-  - stderr: `EVALUATE_FAILED: require is not a function`
-
 ---
 
 ## Idris2
@@ -335,8 +323,3 @@ function Reverse_main($0) {
 }
 try{__mainExpression_0()}catch(e){if(e instanceof IdrisError){console.log('ERROR: ' + e.message)}else{throw e} }
 ```
-
-**SES probes:**
-
-- `lockdown() + require()`: **pass** (exit 0)
-- `Compartment.evaluate()`: **pass** (exit 0)
