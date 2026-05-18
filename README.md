@@ -6,6 +6,13 @@ run each output, and probes that evaluate the SES (Hardened JavaScript)
 compatibility of the generated JS and the ease of calling the verified
 functions from external JavaScript.
 
+## Read the findings
+
+Start with [EVALUATION.md](./EVALUATION.md) for the JS-output analysis,
+or jump to the [Language comparison](#language-comparison) section below
+for a language-level summary. Per-problem side-by-side detail in
+[docs/](./docs/).
+
 ## Layout
 
 ```
@@ -53,12 +60,6 @@ node generator/report.js      # regenerate docs/<problem>.md
 ```
 
 This regenerates everything under `outputs/` and `docs/`.
-
-## Read the findings
-
-Start with [EVALUATION.md](./EVALUATION.md) for the JS-output analysis,
-or the section below for a language-level comparison. Per-problem
-side-by-side detail in [docs/](./docs/).
 
 ## Language comparison
 
