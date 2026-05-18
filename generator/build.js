@@ -30,7 +30,10 @@ function run(step) {
 
 function readCompiledJs(impl) {
   const out = [];
-  for (const rel of impl.jsFiles) {
+  const files = typeof impl.jsFiles === 'function'
+    ? impl.jsFiles(impl.outputDir)
+    : impl.jsFiles;
+  for (const rel of files) {
     const full = path.isAbsolute(rel) ? rel : path.join(impl.outputDir, rel);
     let content = '';
     let bytes = 0;
@@ -40,7 +43,18 @@ function readCompiledJs(impl) {
     } catch (e) {
       content = `<unable to read: ${e.message}>`;
     }
-    out.push({ relPath: rel, bytes, content });
+    let relevantContent = null;
+    if (impl.extractRelevant) {
+      try { relevantContent = impl.extractRelevant(rel, content); }
+      catch (e) { relevantContent = null; }
+    }
+    out.push({
+      relPath: rel,
+      bytes,
+      content,
+      relevantContent,
+      relevantBytes: relevantContent ? Buffer.byteLength(relevantContent) : null,
+    });
   }
   return out;
 }
@@ -71,6 +85,20 @@ function main() {
       }
       const source = readSource(impl);
       const totalBytes = compiled ? compiled.reduce((a, b) => a + b.bytes, 0) : 0;
+      // Split compiled bytes into "solution" (user-relevant) vs "library"
+      // (runtime + stdlib). The extractor's return value is the signal:
+      //   null    → whole file is user code         → all bytes count as solution
+      //   ''      → whole file is runtime/stdlib    → all bytes count as library
+      //   string  → only that slice is user code    → relevantBytes solution, rest library
+      let solutionBytes = 0;
+      let libraryBytes = 0;
+      if (compiled) {
+        for (const f of compiled) {
+          if (f.relevantContent == null) solutionBytes += f.bytes;
+          else if (f.relevantContent === '') libraryBytes += f.bytes;
+          else { solutionBytes += f.relevantBytes; libraryBytes += f.bytes - f.relevantBytes; }
+        }
+      }
       results.push({
         language: impl.language,
         sourcePath: path.relative(ROOT, impl.sourcePath),
@@ -79,6 +107,8 @@ function main() {
         source,
         compiled,
         compiledBytes: totalBytes,
+        solutionBytes,
+        libraryBytes,
         build,
         run: runRes,
         expected: impl.expected,

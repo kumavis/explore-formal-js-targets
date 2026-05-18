@@ -1,5 +1,6 @@
 'use strict';
 const path = require('node:path');
+const { extractDafny, extractAgda, extractIdris2 } = require('./extract.js');
 
 // Each problem declares how its three implementations build, run, and
 // what JS files we should consider its "compiled output" for inspection.
@@ -36,6 +37,8 @@ function dafny(srcRel, expected) {
       cwd: dir,
       env: { NODE_PATH: NODE_PATH_FOR_NPM },
     },
+    extractRelevant: (relPath, content) =>
+      relPath === `${stem}.js` ? extractDafny(content, stem) : null,
     expected,
   };
 }
@@ -50,7 +53,9 @@ function agda(srcRel, expected) {
     sourcePath: path.join(dir, src),
     outputDir: dir,
     jsEntry: path.join(dir, `jAgda.${stem}.js`),
-    jsFiles: [`jAgda.${stem}.js`, 'agda-rts.js'],
+    // Resolved at build time: include the user module + agda-rts.js + every
+    // jAgda.Agda.*.js stdlib module Agda emits alongside.
+    jsFiles: (outDir) => require('node:fs').readdirSync(outDir).filter((f) => f.endsWith('.js')),
     build: {
       command: 'nix',
       args: ['shell', 'nixpkgs#agda', '--command', 'agda', '--js', '--js-optimize', '--compile-dir=.', src],
@@ -62,6 +67,7 @@ function agda(srcRel, expected) {
       cwd: dir,
       env: { NODE_PATH: dir },
     },
+    extractRelevant: extractAgda,
     expected,
   };
 }
@@ -87,6 +93,8 @@ function idris2(srcRel, execName, expected) {
       args: [path.join('build/exec', execName)],
       cwd: dir,
     },
+    extractRelevant: (relPath, content) =>
+      relPath === execName ? extractIdris2(content, stem) : null,
     expected,
   };
 }

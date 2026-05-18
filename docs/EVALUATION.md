@@ -8,18 +8,20 @@ Auto-generated summary of three dimensions:
 
 ## Aggregate metrics
 
-| Problem | Lang | src LOC | compiled bytes | needs bundling | static scan | lockdown+require | raw compartment | bundled compartment |
-| --- | --- | ---: | ---: | :---: | :---: | :---: | :---: | :---: |
-| factorial | Dafny | 31 | 32,337 | **yes** | ✅ | ✅ | ❌ | ❌ |
-| factorial | Agda | 40 | 12,424 | **yes** | ✅ | ✅ | ❌ | ✅ |
-| factorial | Idris2 | 22 | 10,221 | no | ✅ | ✅ | ✅ | ✅ |
-| reverse | Dafny | 38 | 32,211 | **yes** | ✅ | ✅ | ❌ | ❌ |
-| reverse | Agda | 60 | 12,763 | **yes** | ✅ | ✅ | ❌ | ✅ |
-| reverse | Idris2 | 34 | 11,850 | no | ✅ | ✅ | ✅ | ✅ |
-| insertion-sort | Dafny | 78 | 32,545 | **yes** | ✅ | ✅ | ❌ | ❌ |
-| insertion-sort | Agda | 92 | 16,957 | **yes** | ✅ | ✅ | ❌ | ✅ |
-| insertion-sort | Idris2 | 79 | 12,317 | no | ✅ | ✅ | ✅ | ✅ |
+| Problem | Lang | src LOC | compiled JS (solution + library = total) | needs bundling | static scan | lockdown+require | raw compartment | bundled compartment | endowments |
+| --- | --- | ---: | ---: | :---: | :---: | :---: | :---: | :---: | --- |
+| factorial | Dafny | 31 | 1,499 + 30,838 = 32,337 | **yes** | ✅ | ✅ | ❌ | ✅ | `console` + `BigNumber` + `Math` |
+| factorial | Agda | 40 | 1,565 + 14,926 = 16,491 | **yes** | ✅ | ✅ | ❌ | ✅ | `console` |
+| factorial | Idris2 | 22 | 403 + 9,818 = 10,221 | no | ✅ | ✅ | ✅ | ✅ | `console` |
+| reverse | Dafny | 38 | 1,375 + 30,836 = 32,211 | **yes** | ✅ | ✅ | ❌ | ✅ | `console` + `BigNumber` + `Math` |
+| reverse | Agda | 60 | 1,904 + 14,926 = 16,830 | **yes** | ✅ | ✅ | ❌ | ✅ | `console` |
+| reverse | Idris2 | 34 | 612 + 11,238 = 11,850 | no | ✅ | ✅ | ✅ | ✅ | `console` |
+| insertion-sort | Dafny | 78 | 1,703 + 30,842 = 32,545 | **yes** | ✅ | ✅ | ❌ | ✅ | `console` + `BigNumber` + `Math` |
+| insertion-sort | Agda | 92 | 6,098 + 14,759 = 20,857 | **yes** | ✅ | ✅ | ❌ | ✅ | `console` |
+| insertion-sort | Idris2 | 79 | 1,477 + 10,840 = 12,317 | no | ✅ | ✅ | ✅ | ✅ | `console` |
 
 Legend: ✅ pass, ❌ fail, — not applicable.
+
+**Dafny note:** the bundled-compartment column passes only because we endow `Math`. Dafny's `bignumber.js` runtime calls `Math.random()` at module init and secure-mode SES `Math` removes `random`.
 
 See [hand-written notes](../EVALUATION.md) for the qualitative analysis (FFI ergonomics, readability commentary, etc.).

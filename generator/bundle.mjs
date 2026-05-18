@@ -219,8 +219,14 @@ for (const t of TASKS) {
       all[t.problem].push({ tool: impl.tool, prepareError: e.message });
       continue;
     }
-    const endowments = impl.kind === 'dafny' ? { console, BigNumber } : { console };
+    // Dafny pulls bignumber.js, which calls Math.random() during init —
+    // SES's secure-mode Math removes random(). Endowing the host Math is
+    // the documented escape hatch. (Real deployments should wrap Math.)
+    const endowments = impl.kind === 'dafny'
+      ? { console, BigNumber, Math }
+      : { console };
     const { r, ns } = await bundleAndImport(impl.tool, prepared, { endowments });
+    r.endowments = Object.keys(endowments);
     if (t.runSort && ns) {
       try {
         const adapter = ADAPTERS[impl.tool](BigNumber);
