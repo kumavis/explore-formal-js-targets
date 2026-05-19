@@ -9,9 +9,7 @@ problems/**/build/
 
 # Dafny: only the source .dfy is checked in; the compiled .js is regenerated.
 # (The .js next to each .dfy is the build output.)
-problems/factorial/dafny/Factorial.js
-problems/reverse/dafny/Reverse.js
-problems/insertion-sort/dafny/InsertionSort.js
+problems/*/dafny/*.js
 
 # Generator outputs (regenerable)
 outputs/
