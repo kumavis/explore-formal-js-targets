@@ -10,7 +10,8 @@
     "ffi": "node generator/ffi-probe.js",
     "bundle": "node generator/bundle.mjs",
     "report": "node generator/report.js",
-    "all": "node generator/build.js && node generator/ses-check.js && node generator/ffi-probe.js && node generator/bundle.mjs && node generator/report.js"
+    "all": "node generator/build.js && node generator/ses-check.js && node generator/ffi-probe.js && node generator/bundle.mjs && node generator/report.js",
+    "check": "npm run all && git diff --exit-code -- docs/ || (echo '\n*** docs/ are out of date. Run `npm run all` and commit the regenerated files. ***' && exit 1)"
   },
   "dependencies": {
     "@endo/bundle-source": "^4.3.0",

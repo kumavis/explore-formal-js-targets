@@ -27,8 +27,8 @@ function dafny(srcRel, expected) {
     jsEntry: path.join(dir, `${stem}.js`),
     jsFiles: [`${stem}.js`],
     build: {
-      command: 'nix',
-      args: ['shell', 'nixpkgs#dafny', '--command', 'dafny', 'build', '--target:js', src],
+      command: 'dafny',
+      args: ['build', '--target:js', src],
       cwd: dir,
     },
     run: {
@@ -57,8 +57,8 @@ function agda(srcRel, expected) {
     // jAgda.Agda.*.js stdlib module Agda emits alongside.
     jsFiles: (outDir) => require('node:fs').readdirSync(outDir).filter((f) => f.endsWith('.js')),
     build: {
-      command: 'nix',
-      args: ['shell', 'nixpkgs#agda', '--command', 'agda', '--js', '--js-optimize', '--compile-dir=.', src],
+      command: 'agda',
+      args: ['--js', '--js-optimize', '--compile-dir=.', src],
       cwd: dir,
     },
     run: {
@@ -85,7 +85,7 @@ function idris2(srcRel, execName, expected) {
     jsFiles: [execName],
     build: {
       command: 'sh',
-      args: ['-c', `rm -rf build && nix shell nixpkgs#idris2 --command idris2 --cg node -o ${execName} ${src}`],
+      args: ['-c', `rm -rf build && idris2 --cg node -o ${execName} ${src}`],
       cwd: dir,
     },
     run: {

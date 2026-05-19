@@ -4,8 +4,7 @@ Two patterns in one source file ([`Caps.idr`](./Caps.idr)) and one driver
 ([`driver.mjs`](./driver.mjs)). Run:
 
 ```
-nix shell nixpkgs#idris2 --command idris2 --cg node -o caps Caps.idr
-node driver.mjs
+nix develop -c bash -c 'idris2 --cg node -o caps Caps.idr && node driver.mjs'
 ```
 
 Expected output:

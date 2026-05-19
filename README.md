@@ -45,26 +45,28 @@ flake.nix           — pins dafny / agda / idris2 / nodejs from nixpkgs
 
 ## Setup
 
-NixOS / Nix-with-flakes (default):
+Nix-with-flakes (toolchain is pinned via `flake.nix` + `flake.lock`):
 
 ```
 nix develop          # drops you in a shell with dafny, agda, idris2, node
-npm install          # bignumber.js (Dafny runtime dep) + ses (the SES package)
+npm install          # bignumber.js, ses, @endo/bundle-source, @endo/import-bundle
 ```
 
-Otherwise, install Dafny 4.11+, Agda 2.8+, Idris2 0.8+, and Node 22+ by your own means.
+Otherwise, install Dafny 4.11, Agda 2.8, Idris2 0.8, and Node 22 by
+your own means.
 
 ## Run the full pipeline
 
+Inside `nix develop`:
+
 ```
-node generator/build.js       # compile + run every implementation
-node generator/ses-check.js   # lockdown+require + raw Compartment.evaluate probes
-node generator/ffi-probe.js   # call the verified `sort` from external JS in each lang
-node generator/bundle.mjs     # @endo/bundle-source + @endo/import-bundle into a Compartment
-node generator/report.js      # regenerate docs/<problem>.md
+npm run all          # build + ses + ffi + bundle + report
+npm run check        # npm run all && git diff --exit-code -- docs/
 ```
 
-This regenerates everything under `outputs/` and `docs/`.
+`npm run check` is what CI runs ([`.github/workflows/check-docs.yml`](./.github/workflows/check-docs.yml));
+a green local check ≈ green CI. See [DEVELOPMENT.md](./DEVELOPMENT.md)
+for the per-script breakdown and the "I added a new problem" workflow.
 
 ## Language comparison
 

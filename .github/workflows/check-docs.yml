@@ -1,0 +1,29 @@
+name: docs-up-to-date
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      # Nix gives us pinned dafny / agda / idris2 / nodejs from the flake.lock.
+      - uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      # Warm the dev shell so subsequent commands don't re-fetch.
+      - name: Fetch dev-shell toolchain
+        run: nix develop --command true
+
+      - name: Install npm deps
+        run: nix develop --command npm install --no-audit --no-fund
+
+      - name: Regenerate docs and fail if they differ from committed
+        run: nix develop --command npm run check

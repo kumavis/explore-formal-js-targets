@@ -4,8 +4,7 @@ Two patterns in one file ([`Caps.dfy`](./Caps.dfy)) and one driver
 ([`driver.mjs`](./driver.mjs)). Run:
 
 ```
-nix shell nixpkgs#dafny --command dafny build --target:js Caps.dfy
-node driver.mjs
+nix develop -c bash -c 'dafny build --target:js Caps.dfy && node driver.mjs'
 ```
 
 Expected output:

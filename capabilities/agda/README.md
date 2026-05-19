@@ -4,8 +4,7 @@ Two patterns in one source file ([`Caps.agda`](./Caps.agda)) and one driver
 ([`driver.mjs`](./driver.mjs)). Run:
 
 ```
-nix shell nixpkgs#agda --command agda --js --js-optimize --compile-dir=. Caps.agda
-node driver.mjs
+nix develop -c bash -c 'agda --js --js-optimize --compile-dir=. Caps.agda && node driver.mjs'
 ```
 
 Expected output:
