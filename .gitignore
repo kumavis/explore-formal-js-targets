@@ -52,5 +52,23 @@ capabilities/coq/*.js
 capabilities/coq/caps.ml
 capabilities/coq/caps.mli
 
+# jesc24/ build artifacts
+jesc24/dafny/*.js
+jesc24/dafny/*.dtr
+jesc24/agda/jAgda.*.js
+jesc24/agda/agda-rts.js
+jesc24/agda/*.agdai
+jesc24/idris2/build/
+jesc24/coq/.*.aux
+jesc24/coq/.*.cache
+jesc24/coq/*.vo
+jesc24/coq/*.glob
+jesc24/coq/*.cmo
+jesc24/coq/*.cmi
+jesc24/coq/*.byte
+jesc24/coq/*.js
+jesc24/coq/sealer.ml
+jesc24/coq/sealer.mli
+
 # Generator outputs (regenerable)
 outputs/

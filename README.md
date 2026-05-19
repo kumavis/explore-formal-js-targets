@@ -18,6 +18,10 @@ verified code; the verified module *being* a capability the host holds),
 see [capabilities/](./capabilities/) — one writeup per language, no
 mechanized comparison, different approaches per language as appropriate.
 
+For a port of the dynamic-sealer pattern from
+[agoric-labs/jesc24](https://github.com/agoric-labs/jesc24)
+implemented in all four languages, see [jesc24/](./jesc24/).
+
 ## Layout
 
 ```
