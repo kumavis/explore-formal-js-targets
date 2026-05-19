@@ -1,4 +1,4 @@
-# Exploring JavaScript compile targets of Dafny, Agda, and Idris2
+# Exploring JavaScript compile targets of Dafny, Agda, Idris2, and Coq
 
 A small comparison project. For each of three provable problems we have
 side-by-side implementations in all three tools, scripts that compile +
