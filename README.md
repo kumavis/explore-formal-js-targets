@@ -13,6 +13,11 @@ or jump to the [Language comparison](#language-comparison) section below
 for a language-level summary. Per-problem side-by-side detail in
 [docs/](./docs/).
 
+For a separate capabilities exploration (passing a host function *into*
+verified code; the verified module *being* a capability the host holds),
+see [capabilities/](./capabilities/) — one writeup per language, no
+mechanized comparison, different approaches per language as appropriate.
+
 ## Layout
 
 ```

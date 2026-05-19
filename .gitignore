@@ -10,6 +10,14 @@ problems/**/build/
 # Dafny: only the source .dfy is checked in; the compiled .js is regenerated.
 # (The .js next to each .dfy is the build output.)
 problems/*/dafny/*.js
+capabilities/dafny/*.js
+capabilities/dafny/*.dtr
+
+# Capabilities directory: same conventions as problems/.
+capabilities/*/jAgda.*.js
+capabilities/*/agda-rts.js
+capabilities/*/*.agdai
+capabilities/*/build/
 
 # Generator outputs (regenerable)
 outputs/
