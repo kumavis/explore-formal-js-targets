@@ -1,6 +1,6 @@
 'use strict';
 const path = require('node:path');
-const { extractDafny, extractAgda, extractIdris2 } = require('./extract.js');
+const { extractDafny, extractAgda, extractIdris2, extractCoq } = require('./extract.js');
 
 // Each problem declares how its three implementations build, run, and
 // what JS files we should consider its "compiled output" for inspection.
@@ -99,6 +99,35 @@ function idris2(srcRel, execName, expected) {
   };
 }
 
+function coq(srcRel, expected) {
+  const dir = path.join(ROOT, srcRel);
+  const src = require('node:fs').readdirSync(dir).find((f) => f.endsWith('.v'));
+  if (!src) throw new Error(`no .v in ${dir}`);
+  const stem = src.replace(/\.v$/, '');         // "Factorial"
+  const stemLc = stem.toLowerCase();             // "factorial"
+  const buildSh = path.join(ROOT, 'generator', 'coq-build.sh');
+  return {
+    language: 'Coq',
+    sourcePath: path.join(dir, src),
+    outputDir: dir,
+    jsEntry: path.join(dir, `${stemLc}.js`),
+    jsFiles: [`${stemLc}.js`],
+    build: {
+      command: 'sh',
+      args: ['-c', `${buildSh} ${stem}`],
+      cwd: dir,
+    },
+    run: {
+      command: 'node',
+      args: [`${stemLc}.js`],
+      cwd: dir,
+    },
+    extractRelevant: (relPath, content) =>
+      relPath === `${stemLc}.js` ? extractCoq(content) : null,
+    expected,
+  };
+}
+
 const PROBLEMS = [
   {
     id: 'factorial',
@@ -111,6 +140,7 @@ const PROBLEMS = [
       dafny('problems/factorial/dafny', 'factorial(5) = 120'),
       agda('problems/factorial/agda', '120'),
       idris2('problems/factorial/idris2', 'factorial', '120'),
+      coq('problems/factorial/coq', 'factorial(5) = 120'),
     ],
   },
   {

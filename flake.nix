@@ -17,6 +17,15 @@
               pkgs.dafny
               pkgs.agda
               pkgs.idris2
+              # Coq pinned to the version agoric-labs/jesc24 targets (8.9.1).
+              # The OCaml + js_of_ocaml below are *separate* — they compile
+              # Coq's extracted .ml output, and don't need to match the OCaml
+              # used to build Coq itself.
+              pkgs.coq_8_9
+              pkgs.ocaml
+              pkgs.ocamlPackages.findlib
+              pkgs.ocamlPackages.js_of_ocaml
+              pkgs.ocamlPackages.js_of_ocaml-compiler
               pkgs.nodejs_22
               pkgs.jq
             ];

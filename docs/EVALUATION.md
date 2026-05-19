@@ -13,6 +13,7 @@ Auto-generated summary of three dimensions:
 | factorial | Dafny | 31 | 1,499 + 30,838 = 32,337 | **yes** | ✅ | ✅ | ❌ | ✅ | `console` + `BigNumber` + `Math` |
 | factorial | Agda | 40 | 1,565 + 14,926 = 16,491 | **yes** | ✅ | ✅ | ❌ | ✅ | `console` |
 | factorial | Idris2 | 22 | 403 + 9,818 = 10,221 | no | ✅ | ✅ | ✅ | ✅ | `console` |
+| factorial | Coq | 26 | 1,624 + 68,794 = 70,418 | no | ✅ | ✅ | ❌ | — | `console` |
 | reverse | Dafny | 38 | 1,375 + 30,836 = 32,211 | **yes** | ✅ | ✅ | ❌ | ✅ | `console` + `BigNumber` + `Math` |
 | reverse | Agda | 60 | 1,904 + 14,926 = 16,830 | **yes** | ✅ | ✅ | ❌ | ✅ | `console` |
 | reverse | Idris2 | 34 | 612 + 11,238 = 11,850 | no | ✅ | ✅ | ✅ | ✅ | `console` |

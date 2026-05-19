@@ -98,4 +98,30 @@ function extractIdris2(content, moduleName) {
     (trailer ? `\n${trailer[0]}` : '');
 }
 
-module.exports = { extractDafny, extractAgda, extractIdris2 };
+// --- Coq (via js_of_ocaml) -------------------------------------------------
+
+// js_of_ocaml emits a single self-contained closure of the shape
+//
+//   (function (globalThis) {  …runtime…  …user fns…  …main… }(globalThis));
+//
+// All identifiers are mangled by the optimizer (`fact` becomes `bM` etc.),
+// so symbol-based extraction is not possible. The user logic lives in the
+// last ~1 KB of the bundle just before the trailing `(globalThis));`. We
+// return that tail with a header noting the limitation, so the docs show
+// what reaching for the user code in a js_of_ocaml bundle actually looks
+// like instead of pretending to extract by name.
+function extractCoq(content) {
+  const tail = content.slice(-1400).replace(/^[^\n]*\n/, '');
+  return [
+    '// (js_of_ocaml bundles the entire OCaml runtime + extracted user',
+    "//  code into a single closure with mangled identifiers; symbol-",
+    '//  based extraction is not feasible. Showing the bundle tail —',
+    "//  the verified `fact` is the recursive `function bM(a){ … }`",
+    '//  near the end.)',
+    '//',
+    '// …',
+    tail,
+  ].join('\n');
+}
+
+module.exports = { extractDafny, extractAgda, extractIdris2, extractCoq };

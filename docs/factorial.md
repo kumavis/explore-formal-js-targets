@@ -9,6 +9,7 @@ Recursive factorial function with a proof that the result is at least 1. Dafny u
 | Dafny | 31 | 584 | 1,499 + 30,838 = 32,337 | `factorial(5) = 120` | ✅ ok |
 | Agda | 40 | 1,343 | 1,565 + 14,926 = 16,491 | `120` | ✅ ok |
 | Idris2 | 22 | 619 | 403 + 9,818 = 10,221 | `120` | ✅ ok |
+| Coq | 26 | 581 | 1,624 + 68,794 = 70,418 | `factorial(5) = 120` | ✅ ok |
 
 ## SES compatibility
 
@@ -17,6 +18,7 @@ Recursive factorial function with a proof that the result is at least 1. Dafny u
 | Dafny | **yes** | ✅ clean | ✅ pass | ❌ evaluate-failed | ✅ pass | `console` + `BigNumber` + `Math` |
 | Agda | **yes** | ✅ clean | ✅ pass | ❌ evaluate-failed | ✅ pass | `console` |
 | Idris2 | no | ✅ clean | ✅ pass | ✅ pass | ✅ pass | `console` |
+| Coq | no | ✅ clean | ✅ pass | ❌ evaluate-failed | — n/a | `console` |
 
 > **Dafny bundling requirement:** the bundled compartment passes only with `Math` (in addition to `BigNumber`) endowed. Dafny's emitted runtime calls `bignumber.js`, which invokes `Math.random()` during initialization — SES's secure-mode `Math` removes `random`, so without the endowment the bundle imports fail at load. A real deployment should wrap `Math` rather than passing the host's.
 
@@ -27,6 +29,7 @@ Recursive factorial function with a proof that the result is at least 1. Dafny u
 | Dafny | 162,956 | _dafny, _System, Factorial, _module, default | imported keys: _dafny, _System, Factorial, _module, default |
 | Agda | 37,948 | IsPositive, factorial, natToString, putStrLn, main, default, mul-pos, factorial-pos | imported keys: IsPositive, factorial, natToString, putStrLn, main, default, mul-pos, factorial-pos |
 | Idris2 | 15,380 | factorial, default | imported keys: factorial, default |
+| Coq | — | — | not attempted |
 
 ---
 
@@ -293,4 +296,99 @@ function Factorial_factorial($0) {
  }
 }
 try{__mainExpression_0()}catch(e){if(e instanceof IdrisError){console.log('ERROR: ' + e.message)}else{throw e} }
+```
+
+---
+
+## Coq
+
+**Source** (`problems/factorial/coq/Factorial.v`):
+
+```coq
+(* Factorial in Coq, with extraction to OCaml. *)
+
+Require Import Coq.Init.Nat.
+Require Import Coq.Arith.PeanoNat.
+Require Import Coq.extraction.Extraction.
+Require Import Coq.extraction.ExtrOcamlBasic.
+Require Import Coq.extraction.ExtrOcamlNatInt.
+
+Fixpoint fact (n : nat) : nat :=
+  match n with
+  | O => 1
+  | S n' => n * fact n'
+  end.
+
+Lemma fact_pos : forall n, 1 <= fact n.
+Proof.
+  induction n; simpl.
+  - apply Nat.le_refl.
+  - destruct (fact n) eqn:E.
+    + inversion IHn.
+    + apply le_n_S, Nat.le_0_l.
+Qed.
+
+Extraction Language OCaml.
+Extraction "factorial.ml" fact.
+
+```
+
+**Build:** exit `0`
+
+**Run:** exit `0` — stdout: `factorial(5) = 120`
+
+**Generated JS — user code only** (from `factorial.js`, 70,418 bytes total, 1,624 shown; runtime prelude elided):
+
+```js
+// (js_of_ocaml bundles the entire OCaml runtime + extracted user
+//  code into a single closure with mangled identifiers; symbol-
+//  based extraction is not feasible. Showing the bundle tail —
+//  the verified `fact` is the recursive `function bM(a){ … }`
+//  near the end.)
+//
+// …
+m=d[1];if(typeof
+e==="number")return e?function(a,b,c){return i(k,[4,j,B(m,a,ag(b,K(f,g,c)))],h)}:function(a,b){return i(k,[4,j,B(m,a,K(f,g,b))],h)};var
+o=e[1];return function(a,b){return i(k,[4,j,B(m,a,ag(o,K(f,g,b)))],h)}}function
+a7(a,b,c,d,e,f){if(e){var
+h=e[1];return function(a){return ds(b,c,d,h,_(f,a))}}var
+g=[4,c,f];return a<50?at(a+1|0,b,g,d):ae(at,[0,b,g,d])}function
+ds(a,b,c,d,e){return by(a7(0,a,b,c,d,e))}function
+S(a,b){var
+c=b;for(;;){if(typeof
+c==="number")return;switch(c[0]){case
+0:var
+e=c[2],h=c[1];if(typeof
+e==="number")switch(e){case
+0:var
+d="@]";break;case
+1:var
+d="@}";break;case
+2:var
+d="@?";break;case
+3:var
+d="@\n";break;case
+4:var
+d="@.";break;case
+5:var
+d="@@";break;default:var
+d="@%"}else
+var
+d=2===e[0]?"@"+H(Z(1,e[1])):e[1];S(a,h);return aF(a,d);case
+1:var
+f=c[2],g=c[1];if(0===f[0]){var
+i=f[1];S(a,g);aF(a,"@{");c=i}else{var
+j=f[1];S(a,g);aF(a,"@[");c=j}break;case
+6:var
+m=c[2];S(a,c[1]);return _(m,a);case
+7:S(a,c[1]);ao(a);return;case
+8:var
+n=c[2];S(a,c[1]);return aE(n);case
+2:case
+4:var
+k=c[2];S(a,c[1]);return aF(a,k);default:var
+l=c[2];S(a,c[1]);ed(a,l);return}}}function
+bM(a){return 0===a?1:bv(a,bM(a-1|0))}var
+bN=5,dx=bM(bN);K(i(function(a){S(c6,a);return 0},0,[0,[11,"factorial(",[4,0,0,0,[11,") = ",[4,0,0,0,[12,10,0]]]]],"factorial(%d) = %d\n"][1]),bN,dx);bH(0);return}(globalThis));
+
 ```

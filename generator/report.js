@@ -10,11 +10,13 @@ const { PROBLEMS, ROOT } = require('./problems.js');
 const OUT_ROOT = path.join(ROOT, 'outputs');
 const DOCS_ROOT = path.join(ROOT, 'docs');
 
-const LANG_FENCE = { Dafny: 'dafny', Agda: 'agda', Idris2: 'idris', JS: 'js' };
+const LANG_FENCE = { Dafny: 'dafny', Agda: 'agda', Idris2: 'idris', Coq: 'coq', JS: 'js' };
 
 // Whether each tool's output uses module-loader `require()` at top level and
 // therefore needs a bundler before it can run inside a SES Compartment.
-const NEEDS_BUNDLING = { Dafny: true, Agda: true, Idris2: false };
+// Coq → OCaml → js_of_ocaml produces a single self-contained closure with
+// no top-level `require`, similar in shape to the Idris2 node backend.
+const NEEDS_BUNDLING = { Dafny: true, Agda: true, Idris2: false, Coq: false };
 
 function emoji(cls) {
   if (cls === 'pass') return '✅';
