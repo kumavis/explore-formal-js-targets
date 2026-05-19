@@ -18,9 +18,15 @@ Insertion sort over a list of naturals. Dafny verifies both sortedness AND multi
 | Dafny | **yes** | ✅ clean | ✅ pass | ❌ evaluate-failed | ✅ pass | `console` + `BigNumber` + `Math` |
 | Agda | **yes** | ✅ clean | ✅ pass | ❌ evaluate-failed | ✅ pass | `console` |
 | Idris2 | no | ✅ clean | ✅ pass | ✅ pass | ✅ pass | `console` |
-| Coq | no | ✅ clean | ✅ pass | ❌ evaluate-failed | — n/a | `console` |
+| Coq | no | ✅ clean | ✅ pass | ❌ evaluate-failed | ❌ import-failed | `console` + `TextDecoder` + `TextEncoder` + `Int8Array` + `Uint8Array` + `Uint8ClampedArray` + `Int16Array` + `Uint16Array` + `Int32Array` + `Uint32Array` + `Float32Array` + `Float64Array` + `BigInt64Array` + `BigUint64Array` + `ArrayBuffer` + `DataView` |
 
 > **Dafny bundling requirement:** the bundled compartment passes only with `Math` (in addition to `BigNumber`) endowed. Dafny's emitted runtime calls `bignumber.js`, which invokes `Math.random()` during initialization — SES's secure-mode `Math` removes `random`, so without the endowment the bundle imports fail at load. A real deployment should wrap `Math` rather than passing the host's.
+
+> **Coq bundling requirement:** js_of_ocaml's runtime reaches for `TextDecoder`/`TextEncoder` and the full set of typed-array constructors (`Float32Array`, `Int32Array`, `ArrayBuffer`, `DataView`, …); SES Compartments don't expose those by default, so they must be endowed. Even with those endowed, the bundle still fails import — see the Coq footnote below.
+
+> **Coq Compartment failure:** js_of_ocaml's runtime mutates host globals during initialization (e.g. assigning `jsoo_create_file` onto a top-level object). SES `lockdown()` freezes every standard intrinsic, so the assignment throws `Cannot add property …, object is not extensible`. This is a fundamental incompatibility: even with comprehensive endowments, the bundle does not import into a sealed Compartment without either (a) patching the js_of_ocaml runtime to skip global mutation, or (b) relaxing SES (`overrideTaming: 'min'` and friends), neither of which is in scope here.
+
+> **Coq raw `Compartment.evaluate()` failure:** the same SES-vs-js_of_ocaml mismatch shows up earlier here than in the bundled case — the runtime asks for `TextDecoder` before anything else and the default Compartment doesn't expose it. See the "Coq bundling requirement" note above for the deeper story.
 
 ### Bundle details
 
@@ -29,7 +35,7 @@ Insertion sort over a list of naturals. Dafny verifies both sortedness AND multi
 | Dafny | 163,256 | _dafny, _System, InsertionSort, _module, default | sort output matches expected |
 | Agda | 43,452 | Order, Sorted, compare, insert, sort, showList, putStrLn, main, default, _≤_, _≤*_, ≤-trans, ≤*-trans, insert-≤*, insert-sorted, sort-sorted | sort output matches expected |
 | Idris2 | 18,240 | sort, default | sort output matches expected |
-| Coq | — | — | not attempted |
+| Coq | 100,268 | — | import error: `Cannot add property jsoo_create_file, object is not extensible` |
 
 ---
 

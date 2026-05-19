@@ -199,13 +199,24 @@ The js_of_ocaml runtime is ~60 KB on its own; even a 30-line `factorial`
 ships a 70 KB bundle. Identifier names are mangled by the optimizer
 (`fact` becomes `bM`), so the "user-relevant slice" extractor in
 `generator/extract.js` falls back to showing the bundle *tail* —
-there's no clean way to map JS back to Coq source. The output uses
-`TextDecoder` for string handling, which means raw
-`Compartment.evaluate()` fails under SES until `TextDecoder` is endowed
-(parallel to the Dafny + `Math` situation). And there's no
+there's no clean way to map JS back to Coq source. There's no
 `module.exports` surface at all — js_of_ocaml's output is a
 self-running closure, much like Idris2's, but without even mangled
 symbol access from outside.
+
+The SES story is worse than for the other three. Coq via js_of_ocaml
+is the only output in this repo that **does not import into a SES
+Compartment even with comprehensive endowments**: the runtime reaches
+for `TextDecoder` / `TextEncoder` and the full set of typed-array
+constructors (`Float32Array`, `Int32Array`, `ArrayBuffer`, `DataView`,
+…) — all of which the SES Compartment doesn't expose by default and
+which must be endowed individually — *and* it then mutates host
+globals at init (assigning `jsoo_create_file` onto a frozen object),
+failing with `Cannot add property …, object is not extensible`. The
+per-problem docs ([docs/factorial.md](./docs/factorial.md) and friends)
+record this with a footnote on every cell. Getting Coq through a SES
+Compartment would require either a patched js_of_ocaml runtime that
+doesn't mutate globals or a relaxed `lockdown()` configuration.
 
 ### Idris2
 

@@ -94,9 +94,23 @@ function renderProblem(p) {
   for (const n of extraEndowmentNotes) {
     if (n.lang === 'Dafny' && n.extras.includes('Math')) {
       lines.push('> **Dafny bundling requirement:** the bundled compartment passes only with `Math` (in addition to `BigNumber`) endowed. Dafny\'s emitted runtime calls `bignumber.js`, which invokes `Math.random()` during initialization — SES\'s secure-mode `Math` removes `random`, so without the endowment the bundle imports fail at load. A real deployment should wrap `Math` rather than passing the host\'s.');
+    } else if (n.lang === 'Coq') {
+      lines.push('> **Coq bundling requirement:** js_of_ocaml\'s runtime reaches for `TextDecoder`/`TextEncoder` and the full set of typed-array constructors (`Float32Array`, `Int32Array`, `ArrayBuffer`, `DataView`, …); SES Compartments don\'t expose those by default, so they must be endowed. Even with those endowed, the bundle still fails import — see the Coq footnote below.');
     } else {
       lines.push(`> **${n.lang} bundling requirement:** needs extra endowments \`${n.extras.join('`, `')}\`.`);
     }
+    lines.push('');
+  }
+  // Coq-specific extra footnote: explain the deeper SES incompatibility.
+  const coqBundle = bundleFor(p.problem.id, 'Coq');
+  if (coqBundle && coqBundle.importError && coqBundle.importError.includes('not extensible')) {
+    lines.push('> **Coq Compartment failure:** js_of_ocaml\'s runtime mutates host globals during initialization (e.g. assigning `jsoo_create_file` onto a top-level object). SES `lockdown()` freezes every standard intrinsic, so the assignment throws `Cannot add property …, object is not extensible`. This is a fundamental incompatibility: even with comprehensive endowments, the bundle does not import into a sealed Compartment without either (a) patching the js_of_ocaml runtime to skip global mutation, or (b) relaxing SES (`overrideTaming: \'min\'` and friends), neither of which is in scope here.');
+    lines.push('');
+  }
+  // Coq raw-Compartment failure mentions TextDecoder for the same root cause.
+  const coqRes = p.results.find((r) => r.language === 'Coq');
+  if (coqRes?.ses?.compartmentEvaluate?.stderr?.includes('TextDecoder')) {
+    lines.push('> **Coq raw `Compartment.evaluate()` failure:** the same SES-vs-js_of_ocaml mismatch shows up earlier here than in the bundled case — the runtime asks for `TextDecoder` before anything else and the default Compartment doesn\'t expose it. See the "Coq bundling requirement" note above for the deeper story.');
     lines.push('');
   }
   // Per-cell bundle details

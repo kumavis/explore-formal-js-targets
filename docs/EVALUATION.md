@@ -13,23 +13,23 @@ Auto-generated summary of three dimensions:
 | factorial | Dafny | 31 | 1,499 + 30,838 = 32,337 | **yes** | ✅ | ✅ | ❌ | ✅ | `console` + `BigNumber` + `Math` |
 | factorial | Agda | 40 | 1,565 + 14,926 = 16,491 | **yes** | ✅ | ✅ | ❌ | ✅ | `console` |
 | factorial | Idris2 | 22 | 403 + 9,818 = 10,221 | no | ✅ | ✅ | ✅ | ✅ | `console` |
-| factorial | Coq | 26 | 1,624 + 68,794 = 70,418 | no | ✅ | ✅ | ❌ | — | `console` |
+| factorial | Coq | 26 | 1,624 + 68,794 = 70,418 | no | ✅ | ✅ | ❌ | ❌ | `console` + `TextDecoder` + `TextEncoder` + `Int8Array` + `Uint8Array` + `Uint8ClampedArray` + `Int16Array` + `Uint16Array` + `Int32Array` + `Uint32Array` + `Float32Array` + `Float64Array` + `BigInt64Array` + `BigUint64Array` + `ArrayBuffer` + `DataView` |
 | reverse | Dafny | 38 | 1,375 + 30,836 = 32,211 | **yes** | ✅ | ✅ | ❌ | ✅ | `console` + `BigNumber` + `Math` |
 | reverse | Agda | 60 | 1,904 + 14,926 = 16,830 | **yes** | ✅ | ✅ | ❌ | ✅ | `console` |
 | reverse | Idris2 | 34 | 612 + 11,238 = 11,850 | no | ✅ | ✅ | ✅ | ✅ | `console` |
-| reverse | Coq | 34 | 1,658 + 69,581 = 71,239 | no | ✅ | ✅ | ❌ | — | `console` |
+| reverse | Coq | 34 | 1,658 + 69,581 = 71,239 | no | ✅ | ✅ | ❌ | ❌ | `console` + `TextDecoder` + `TextEncoder` + `Int8Array` + `Uint8Array` + `Uint8ClampedArray` + `Int16Array` + `Uint16Array` + `Int32Array` + `Uint32Array` + `Float32Array` + `Float64Array` + `BigInt64Array` + `BigUint64Array` + `ArrayBuffer` + `DataView` |
 | insertion-sort | Dafny | 78 | 1,703 + 30,842 = 32,545 | **yes** | ✅ | ✅ | ❌ | ✅ | `console` + `BigNumber` + `Math` |
 | insertion-sort | Agda | 92 | 6,098 + 14,759 = 20,857 | **yes** | ✅ | ✅ | ❌ | ✅ | `console` |
 | insertion-sort | Idris2 | 79 | 1,477 + 10,840 = 12,317 | no | ✅ | ✅ | ✅ | ✅ | `console` |
-| insertion-sort | Coq | 90 | 1,681 + 69,661 = 71,342 | no | ✅ | ✅ | ❌ | — | `console` |
+| insertion-sort | Coq | 90 | 1,681 + 69,661 = 71,342 | no | ✅ | ✅ | ❌ | ❌ | `console` + `TextDecoder` + `TextEncoder` + `Int8Array` + `Uint8Array` + `Uint8ClampedArray` + `Int16Array` + `Uint16Array` + `Int32Array` + `Uint32Array` + `Float32Array` + `Float64Array` + `BigInt64Array` + `BigUint64Array` + `ArrayBuffer` + `DataView` |
 | vec-zipwith | Dafny | 28 | 1,749 + 30,839 = 32,588 | **yes** | ✅ | ✅ | ❌ | ✅ | `console` + `BigNumber` + `Math` |
 | vec-zipwith | Agda | 52 | 2,052 + 14,759 = 16,811 | **yes** | ✅ | ✅ | ❌ | ✅ | `console` |
 | vec-zipwith | Idris2 | 33 | 605 + 11,014 = 11,619 | no | ✅ | ✅ | ✅ | ✅ | `console` |
-| vec-zipwith | Coq | 48 | 1,666 + 69,618 = 71,284 | no | ✅ | ✅ | ❌ | — | `console` |
+| vec-zipwith | Coq | 48 | 1,666 + 69,618 = 71,284 | no | ✅ | ✅ | ❌ | ❌ | `console` + `TextDecoder` + `TextEncoder` + `Int8Array` + `Uint8Array` + `Uint8ClampedArray` + `Int16Array` + `Uint16Array` + `Int32Array` + `Uint32Array` + `Float32Array` + `Float64Array` + `BigInt64Array` + `BigUint64Array` + `ArrayBuffer` + `DataView` |
 | sum-formula | Dafny | 29 | 1,598 + 30,839 = 32,437 | **yes** | ✅ | ✅ | ❌ | ✅ | `console` + `BigNumber` + `Math` |
 | sum-formula | Agda | 116 | 1,780 + 14,926 = 16,706 | **yes** | ✅ | ✅ | ❌ | ✅ | `console` |
 | sum-formula | Idris2 | 44 | 263 + 10,102 = 10,365 | no | ✅ | ✅ | ✅ | ✅ | `console` |
-| sum-formula | Coq | 29 | 1,588 + 69,039 = 70,627 | no | ✅ | ✅ | ❌ | — | `console` |
+| sum-formula | Coq | 29 | 1,588 + 69,039 = 70,627 | no | ✅ | ✅ | ❌ | ❌ | `console` + `TextDecoder` + `TextEncoder` + `Int8Array` + `Uint8Array` + `Uint8ClampedArray` + `Int16Array` + `Uint16Array` + `Int32Array` + `Uint32Array` + `Float32Array` + `Float64Array` + `BigInt64Array` + `BigUint64Array` + `ArrayBuffer` + `DataView` |
 
 Legend: ✅ pass, ❌ fail, — not applicable.
 

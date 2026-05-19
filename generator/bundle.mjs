@@ -77,6 +77,25 @@ function prepareAgda(srcDir, destDir) {
   return { entry: path.join(destDir, entryFile) };
 }
 
+function prepareCoq(srcDir, destDir) {
+  // Coq's js_of_ocaml output is a single self-running closure with all
+  // identifiers mangled. There's nothing to extract as a library, so the
+  // bundle is "import it, see if the runtime initialises" — purely a
+  // SES-compatibility probe.
+  fs.rmSync(destDir, { recursive: true, force: true });
+  fs.mkdirSync(destDir, { recursive: true });
+  const srcFile = fs.readdirSync(srcDir).find(
+    (f) => f.endsWith('.js') && !f.startsWith('.'));
+  if (!srcFile) throw new Error(`no .js in ${srcDir}`);
+  let content = fs.readFileSync(path.join(srcDir, srcFile), 'utf8');
+  content += '\nmodule.exports = {};\n';
+  fs.writeFileSync(path.join(destDir, srcFile), content);
+  fs.writeFileSync(path.join(destDir, 'package.json'), JSON.stringify({
+    name: 'coq-bundle', type: 'commonjs', main: srcFile,
+  }, null, 2));
+  return { entry: path.join(destDir, srcFile) };
+}
+
 function prepareIdris2(execPath, destDir, targetSymbolRegex, asName) {
   fs.rmSync(destDir, { recursive: true, force: true });
   fs.mkdirSync(destDir, { recursive: true });
@@ -171,6 +190,9 @@ const TASKS = [
           path.join(ROOT, 'problems/factorial/idris2/build/exec/factorial'),
           path.join(BUNDLES_ROOT, 'factorial/idris2'),
           /\b([A-Z]\w*_factorial)\b/, 'factorial') },
+      { tool: 'Coq', kind: 'coq', prep: () => prepareCoq(
+          path.join(ROOT, 'problems/factorial/coq'),
+          path.join(BUNDLES_ROOT, 'factorial/coq')) },
     ],
   },
   {
@@ -186,6 +208,9 @@ const TASKS = [
           path.join(ROOT, 'problems/reverse/idris2/build/exec/reverse'),
           path.join(BUNDLES_ROOT, 'reverse/idris2'),
           /\b([A-Z]\w*_myReverse)\b/, 'reverse') },
+      { tool: 'Coq', kind: 'coq', prep: () => prepareCoq(
+          path.join(ROOT, 'problems/reverse/coq'),
+          path.join(BUNDLES_ROOT, 'reverse/coq')) },
     ],
   },
   {
@@ -202,6 +227,9 @@ const TASKS = [
           path.join(ROOT, 'problems/insertion-sort/idris2/build/exec/insertionsort'),
           path.join(BUNDLES_ROOT, 'insertion-sort/idris2'),
           /\b([A-Z]\w*_sort)\b/, 'sort') },
+      { tool: 'Coq', kind: 'coq', prep: () => prepareCoq(
+          path.join(ROOT, 'problems/insertion-sort/coq'),
+          path.join(BUNDLES_ROOT, 'insertion-sort/coq')) },
     ],
   },
   {
@@ -217,6 +245,9 @@ const TASKS = [
           path.join(ROOT, 'problems/vec-zipwith/idris2/build/exec/veczipwith'),
           path.join(BUNDLES_ROOT, 'vec-zipwith/idris2'),
           /\b([A-Z]\w*_zipWith)\b/, 'zipWith') },
+      { tool: 'Coq', kind: 'coq', prep: () => prepareCoq(
+          path.join(ROOT, 'problems/vec-zipwith/coq'),
+          path.join(BUNDLES_ROOT, 'vec-zipwith/coq')) },
     ],
   },
   {
@@ -232,6 +263,9 @@ const TASKS = [
           path.join(ROOT, 'problems/sum-formula/idris2/build/exec/sumformula'),
           path.join(BUNDLES_ROOT, 'sum-formula/idris2'),
           /\b([A-Z]\w*_sum)\b/, 'sum') },
+      { tool: 'Coq', kind: 'coq', prep: () => prepareCoq(
+          path.join(ROOT, 'problems/sum-formula/coq'),
+          path.join(BUNDLES_ROOT, 'sum-formula/coq')) },
     ],
   },
 ];
@@ -252,9 +286,26 @@ for (const t of TASKS) {
     // Dafny pulls bignumber.js, which calls Math.random() during init —
     // SES's secure-mode Math removes random(). Endowing the host Math is
     // the documented escape hatch. (Real deployments should wrap Math.)
-    const endowments = impl.kind === 'dafny'
-      ? { console, BigNumber, Math }
-      : { console };
+    //
+    // Coq → js_of_ocaml uses TextDecoder/TextEncoder for string handling.
+    // These aren't in the SES standard intrinsics, so they have to be
+    // endowed for the bundle to import.
+    const endowments =
+      impl.kind === 'dafny' ? { console, BigNumber, Math }
+      : impl.kind === 'coq'  ? {
+          console,
+          // js_of_ocaml's runtime reaches for these host globals:
+          TextDecoder, TextEncoder,
+          // …and typed-array constructors, which aren't on Endo's
+          // default Compartment globals list:
+          Int8Array, Uint8Array, Uint8ClampedArray,
+          Int16Array, Uint16Array,
+          Int32Array, Uint32Array,
+          Float32Array, Float64Array,
+          BigInt64Array, BigUint64Array,
+          ArrayBuffer, DataView,
+        }
+      :                        { console };
     const { r, ns } = await bundleAndImport(impl.tool, prepared, { endowments });
     r.endowments = Object.keys(endowments);
     if (t.runSort && ns) {
