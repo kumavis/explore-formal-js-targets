@@ -9,6 +9,7 @@ Insertion sort over a list of naturals. Dafny verifies both sortedness AND multi
 | Dafny | 78 | 2,211 | 1,703 + 30,842 = 32,545 | `sort([3,1,4,1,5,9,2,6]) = [1, 1, 2, 3, 4, 5, 6, 9]` | ✅ ok |
 | Agda | 92 | 3,500 | 6,098 + 14,759 = 20,857 | `[1,1,2,3,4,5,6,9]` | ✅ ok |
 | Idris2 | 79 | 3,051 | 1,477 + 10,840 = 12,317 | `[1, 1, 2, 3, 4, 5, 6, 9]` | ✅ ok |
+| Coq | 90 | 3,121 | 1,681 + 69,661 = 71,342 | `sort([3,1,4,1,5,9,2,6]) = [1, 1, 2, 3, 4, 5, 6, 9]` | ✅ ok |
 
 ## SES compatibility
 
@@ -17,6 +18,7 @@ Insertion sort over a list of naturals. Dafny verifies both sortedness AND multi
 | Dafny | **yes** | ✅ clean | ✅ pass | ❌ evaluate-failed | ✅ pass | `console` + `BigNumber` + `Math` |
 | Agda | **yes** | ✅ clean | ✅ pass | ❌ evaluate-failed | ✅ pass | `console` |
 | Idris2 | no | ✅ clean | ✅ pass | ✅ pass | ✅ pass | `console` |
+| Coq | no | ✅ clean | ✅ pass | ❌ evaluate-failed | — n/a | `console` |
 
 > **Dafny bundling requirement:** the bundled compartment passes only with `Math` (in addition to `BigNumber`) endowed. Dafny's emitted runtime calls `bignumber.js`, which invokes `Math.random()` during initialization — SES's secure-mode `Math` removes `random`, so without the endowment the bundle imports fail at load. A real deployment should wrap `Math` rather than passing the host's.
 
@@ -27,6 +29,7 @@ Insertion sort over a list of naturals. Dafny verifies both sortedness AND multi
 | Dafny | 163,256 | _dafny, _System, InsertionSort, _module, default | sort output matches expected |
 | Agda | 43,452 | Order, Sorted, compare, insert, sort, showList, putStrLn, main, default, _≤_, _≤*_, ≤-trans, ≤*-trans, insert-≤*, insert-sorted, sort-sorted | sort output matches expected |
 | Idris2 | 18,240 | sort, default | sort output matches expected |
+| Coq | — | — | not attempted |
 
 ---
 
@@ -572,4 +575,150 @@ function InsertionSort_comparex27($0, $1) {
  }
 }
 try{__mainExpression_0()}catch(e){if(e instanceof IdrisError){console.log('ERROR: ' + e.message)}else{throw e} }
+```
+
+---
+
+## Coq
+
+**Source** (`problems/insertion-sort/coq/InsertionSort.v`):
+
+```coq
+(* Insertion sort over a list of nats, with a sortedness proof.
+   We define our own Sorted / LowerBound predicates (mirroring the Agda
+   and Idris2 versions) to make the proof structural and tractable. *)
+
+Require Import Coq.Lists.List.
+Require Import Coq.Arith.PeanoNat.
+Require Import Coq.Arith.Compare_dec.
+Require Import Coq.extraction.Extraction.
+Require Import Coq.extraction.ExtrOcamlBasic.
+Require Import Coq.extraction.ExtrOcamlNatInt.
+
+Import ListNotations.
+
+(* "lo is ≤ every element of xs". *)
+Inductive LowerBound (lo : nat) : list nat -> Prop :=
+  | lb_nil  : LowerBound lo []
+  | lb_cons : forall x xs, lo <= x -> LowerBound lo xs -> LowerBound lo (x :: xs).
+
+(* Sortedness as cons of (lower-bound, sortedness-of-tail). *)
+Inductive Sorted : list nat -> Prop :=
+  | s_nil  : Sorted []
+  | s_cons : forall x xs, LowerBound x xs -> Sorted xs -> Sorted (x :: xs).
+
+Fixpoint insert (x : nat) (xs : list nat) : list nat :=
+  match xs with
+  | []      => [x]
+  | y :: ys =>
+    if Nat.leb x y then x :: y :: ys else y :: insert x ys
+  end.
+
+Fixpoint sort (xs : list nat) : list nat :=
+  match xs with
+  | []      => []
+  | x :: xs' => insert x (sort xs')
+  end.
+
+(* Convert `Nat.leb x y = false` to `y < x` without depending on
+   `Nat.leb_nle` (post-8.9 lemma). *)
+Lemma leb_false_lt : forall x y, Nat.leb x y = false -> y < x.
+Proof.
+  intros x y H. destruct (le_lt_dec x y) as [Hle | Hlt].
+  - apply Nat.leb_le in Hle. rewrite Hle in H. discriminate.
+  - assumption.
+Qed.
+
+(* If `lo <= x` and `lo` is below all of xs, then `lo` is below all of
+   `insert x xs`. *)
+Lemma insert_lower_bound : forall lo x xs,
+  lo <= x -> LowerBound lo xs -> LowerBound lo (insert x xs).
+Proof.
+  intros lo x xs Hlx Hlb. induction Hlb as [|y ys Hloy Hlys IH]; simpl.
+  - apply lb_cons; [assumption | apply lb_nil].
+  - destruct (Nat.leb x y) eqn:Hxy.
+    + apply lb_cons; [assumption|]. apply lb_cons; assumption.
+    + apply lb_cons; assumption.
+Qed.
+
+(* Insert preserves sortedness. *)
+Lemma insert_sorted : forall x xs, Sorted xs -> Sorted (insert x xs).
+Proof.
+  intros x xs Hs. induction Hs as [|y ys Hlb Hsy IH]; simpl.
+  - apply s_cons; [apply lb_nil | apply s_nil].
+  - destruct (Nat.leb x y) eqn:Hxy.
+    + apply Nat.leb_le in Hxy.
+      (* result is x :: y :: ys; need LowerBound x (y :: ys) and Sorted (y :: ys) *)
+      apply s_cons.
+      * apply lb_cons; [assumption|].
+        (* Need LowerBound x ys. We have LowerBound y ys (Hlb) and x <= y. *)
+        clear -Hxy Hlb. induction Hlb as [|z zs Hyz Hlzs IH']; constructor.
+        -- apply Nat.le_trans with y; assumption.
+        -- assumption.
+      * apply s_cons; assumption.
+    + apply leb_false_lt in Hxy.            (* Hxy : y < x *)
+      assert (Hyx : y <= x) by (apply Nat.lt_le_incl; assumption).
+      apply s_cons.
+      * apply insert_lower_bound; assumption.
+      * apply IH.
+Qed.
+
+(* Sort always produces a sorted list. *)
+Theorem sort_sorts : forall xs, Sorted (sort xs).
+Proof.
+  induction xs as [|x xs IH]; simpl.
+  - apply s_nil.
+  - apply insert_sorted; assumption.
+Qed.
+
+Extraction Language OCaml.
+Extraction "insertionsort.ml" sort.
+
+```
+
+**Build:** exit `0`
+
+**Run:** exit `0` — stdout: `sort([3,1,4,1,5,9,2,6]) = [1, 1, 2, 3, 4, 5, 6, 9]`
+
+**Generated JS — user code only** (from `insertionsort.js`, 71,342 bytes total, 1,681 shown; runtime prelude elided):
+
+```js
+// (js_of_ocaml bundles the entire OCaml runtime + extracted user
+//  code into a single closure with mangled identifiers; symbol-
+//  based extraction is not feasible. Showing the bundle tail —
+//  the verified `fact` is the recursive `function bM(a){ … }`
+//  near the end.)
+//
+// …
+i=f[1];T(a,g);aG(a,"@{");c=i}else{var
+j=f[1];T(a,g);aG(a,"@[");c=j}break;case
+6:var
+m=c[2];T(a,c[1]);return D(m,a);case
+7:T(a,c[1]);ap(a);return;case
+8:var
+n=c[2];T(a,c[1]);return at(n);case
+2:case
+4:var
+k=c[2];T(a,c[1]);return aG(a,k);default:var
+l=c[2];T(a,c[1]);ee(a,l);return}}}function
+bM(a,b){if(!b)return[0,a,0];var
+d=b[2],c=b[1];return d_(a,c)?[0,a,[0,c,d]]:[0,c,bM(a,d)]}function
+bN(a){if(!a)return a;var
+b=bN(a[2]);return bM(a[1],b)}var
+dy=function(a,b){if(!b)return e;if(!b[2])return b[1];var
+j=r(a);a:{var
+d=0,c=b,p=0;for(;;){if(!c){var
+n=d;break a}var
+k=c[1];if(!c[2])break;var
+l=c[2],m=(r(k)+j|0)+d|0;if(d<=m){d=m;c=l}else{d=at("String.concat");c=l}}var
+n=r(k)+d|0}var
+i=A(n),h=p,g=b;for(;;){if(g){var
+f=g[1];if(g[2]){var
+o=g[2];am(f,0,i,h,r(f));am(a,0,i,h+r(f)|0,j);h=(h+r(f)|0)+j|0;g=o;continue}am(f,0,i,h,r(f))}return F(i)}}(bd,function(a,b){if(!b)return 0;var
+f=b[2],h=b[1];if(!f)return[0,D(a,h),0];var
+m=f[2],n=f[1],o=D(a,h),l=24029,i=[0,D(a,n),l],e=i,d=1,c=m;for(;;){if(c){var
+g=c[2],j=c[1];if(g){var
+p=g[2],q=g[1],r=D(a,j),k=[0,D(a,q),l];e[d+1]=[0,r,k];e=k;d=1;c=p;continue}e[d+1]=[0,D(a,j),0]}else
+e[d+1]=0;return[0,o,i]}}(function(a){return e+a},bN([0,3,[0,1,[0,4,[0,1,[0,5,[0,9,[0,2,[0,6,0]]]]]]]])));D(i(function(a){T(c7,a);return 0},0,[0,[11,"sort([3,1,4,1,5,9,2,6]) = [",[2,0,[11,"]\n",0]]],"sort([3,1,4,1,5,9,2,6]) = [%s]\n"][1]),dy);bH(0);return}(globalThis));
+
 ```

@@ -9,6 +9,7 @@ A showcase for **SMT-discharged arithmetic**: Dafny proves the closed form in a 
 | Dafny | 29 | 744 | 1,598 + 30,839 = 32,437 | `sum(0..10) = 55  (2*sum = 110, n*(n+1) = 110)` | ✅ ok |
 | Agda | 116 | 3,658 | 1,780 + 14,926 = 16,706 | `sum(0..10) = 55  (sum+sum = 110, n*(n+1) = 110)` | ✅ ok |
 | Idris2 | 44 | 1,334 | 263 + 10,102 = 10,365 | `sum(0..10) = 55  (2*sum = 110, n*(n+1) = 110)` | ✅ ok |
+| Coq | 29 | 846 | 1,588 + 69,039 = 70,627 | `sum(0..10) = 55  (2*sum = 110, n*(n+1) = 110)` | ✅ ok |
 
 ## SES compatibility
 
@@ -17,6 +18,7 @@ A showcase for **SMT-discharged arithmetic**: Dafny proves the closed form in a 
 | Dafny | **yes** | ✅ clean | ✅ pass | ❌ evaluate-failed | ✅ pass | `console` + `BigNumber` + `Math` |
 | Agda | **yes** | ✅ clean | ✅ pass | ❌ evaluate-failed | ✅ pass | `console` |
 | Idris2 | no | ✅ clean | ✅ pass | ✅ pass | ✅ pass | `console` |
+| Coq | no | ✅ clean | ✅ pass | ❌ evaluate-failed | — n/a | `console` |
 
 > **Dafny bundling requirement:** the bundled compartment passes only with `Math` (in addition to `BigNumber`) endowed. Dafny's emitted runtime calls `bignumber.js`, which invokes `Math.random()` during initialization — SES's secure-mode `Math` removes `random`, so without the endowment the bundle imports fail at load. A real deployment should wrap `Math` rather than passing the host's.
 
@@ -27,6 +29,7 @@ A showcase for **SMT-discharged arithmetic**: Dafny proves the closed form in a 
 | Dafny | 163,096 | _dafny, _System, SumFormula, _module, default | imported keys: _dafny, _System, SumFormula, _module, default |
 | Agda | 38,236 | sum, natToString, putStrLn, main, default, _++_ | imported keys: sum, natToString, putStrLn, main, default, _++_ |
 | Idris2 | 15,552 | sum, default | imported keys: sum, default |
+| Coq | — | — | not attempted |
 
 ---
 
@@ -385,4 +388,101 @@ function SumFormula_sum($0) {
  }
 }
 try{__mainExpression_0()}catch(e){if(e instanceof IdrisError){console.log('ERROR: ' + e.message)}else{throw e} }
+```
+
+---
+
+## Coq
+
+**Source** (`problems/sum-formula/coq/SumFormula.v`):
+
+```coq
+(* Triangular-number closed form: 2 * Sum n = n * (n + 1).
+   In Coq this is one induction plus `ring` (which handles the nonlinear
+   arithmetic step Dafny's SMT solver does automatically). *)
+
+Require Import Coq.Init.Nat.
+Require Import Coq.Arith.PeanoNat.
+Require Import Lia.
+Require Import Coq.extraction.Extraction.
+Require Import Coq.extraction.ExtrOcamlBasic.
+Require Import Coq.extraction.ExtrOcamlNatInt.
+
+Fixpoint sum (n : nat) : nat :=
+  match n with
+  | O => 0
+  | S n' => S n' + sum n'
+  end.
+
+Theorem closed_form : forall n, 2 * sum n = n * (n + 1).
+Proof.
+  induction n as [|n IH].
+  - reflexivity.
+  - (* Unfold sum once, substitute the IH, then let `nia` (nonlinear
+       integer arithmetic) handle the algebra. *)
+    change (sum (S n)) with (S n + sum n). nia.
+Qed.
+
+Extraction Language OCaml.
+Extraction "sumformula.ml" sum.
+
+```
+
+**Build:** exit `0`
+
+**Run:** exit `0` — stdout: `sum(0..10) = 55  (2*sum = 110, n*(n+1) = 110)`
+
+**Generated JS — user code only** (from `sumformula.js`, 70,627 bytes total, 1,588 shown; runtime prelude elided):
+
+```js
+// (js_of_ocaml bundles the entire OCaml runtime + extracted user
+//  code into a single closure with mangled identifiers; symbol-
+//  based extraction is not feasible. Showing the bundle tail —
+//  the verified `fact` is the recursive `function bM(a){ … }`
+//  near the end.)
+//
+// …
+o=e[1];return function(a,b){return i(k,[4,j,B(m,a,ag(o,O(f,g,b)))],h)}}function
+a7(a,b,c,d,e,f){if(e){var
+h=e[1];return function(a){return du(b,c,d,h,_(f,a))}}var
+g=[4,c,f];return a<50?au(a+1|0,b,g,d):ae(au,[0,b,g,d])}function
+du(a,b,c,d,e){return bx(a7(0,a,b,c,d,e))}function
+S(a,b){var
+c=b;for(;;){if(typeof
+c==="number")return;switch(c[0]){case
+0:var
+e=c[2],h=c[1];if(typeof
+e==="number")switch(e){case
+0:var
+d="@]";break;case
+1:var
+d="@}";break;case
+2:var
+d="@?";break;case
+3:var
+d="@\n";break;case
+4:var
+d="@.";break;case
+5:var
+d="@@";break;default:var
+d="@%"}else
+var
+d=2===e[0]?"@"+H(Z(1,e[1])):e[1];S(a,h);return aF(a,d);case
+1:var
+f=c[2],g=c[1];if(0===f[0]){var
+i=f[1];S(a,g);aF(a,"@{");c=i}else{var
+j=f[1];S(a,g);aF(a,"@[");c=j}break;case
+6:var
+m=c[2];S(a,c[1]);return _(m,a);case
+7:S(a,c[1]);ap(a);return;case
+8:var
+n=c[2];S(a,c[1]);return aE(n);case
+2:case
+4:var
+k=c[2];S(a,c[1]);return aF(a,k);default:var
+l=c[2];S(a,c[1]);ef(a,l);return}}}function
+bL(a){if(0===a)return 0;var
+b=a-1|0;return(b+1|0)+bL(b)|0}var
+bM=10,bN=bL(bM);dz(i(function(a){S(c8,a);return 0},0,[0,[11,"sum(0..",[4,0,0,0,[11,") = ",[4,0,0,0,[11,"  (2*sum = ",[4,0,0,0,[11,", n*(n+1) = ",[4,0,0,0,[11,")\n",0]]]]]]]]],"sum(0..%d) = %d  (2*sum = %d, n*(n+1) = %d)\n"][1]),bM,bN,2*bN|0,cd);bG(0);return}(globalThis));
+
 ```

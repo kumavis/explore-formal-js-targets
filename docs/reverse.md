@@ -9,6 +9,7 @@ Naive list reverse with the theorem reverse(reverse(xs)) ≡ xs. Dafny proves it
 | Dafny | 38 | 792 | 1,375 + 30,836 = 32,211 | `reverse([1,2,3,4]) = [4, 3, 2, 1]` | ✅ ok |
 | Agda | 60 | 2,178 | 1,904 + 14,926 = 16,830 | `[4,3,2,1]` | ✅ ok |
 | Idris2 | 34 | 1,160 | 612 + 11,238 = 11,850 | `[4, 3, 2, 1]` | ✅ ok |
+| Coq | 34 | 896 | 1,658 + 69,581 = 71,239 | `reverse([1,2,3,4]) = [4, 3, 2, 1]` | ✅ ok |
 
 ## SES compatibility
 
@@ -17,6 +18,7 @@ Naive list reverse with the theorem reverse(reverse(xs)) ≡ xs. Dafny proves it
 | Dafny | **yes** | ✅ clean | ✅ pass | ❌ evaluate-failed | ✅ pass | `console` + `BigNumber` + `Math` |
 | Agda | **yes** | ✅ clean | ✅ pass | ❌ evaluate-failed | ✅ pass | `console` |
 | Idris2 | no | ✅ clean | ✅ pass | ✅ pass | ✅ pass | `console` |
+| Coq | no | ✅ clean | ✅ pass | ❌ evaluate-failed | — n/a | `console` |
 
 > **Dafny bundling requirement:** the bundled compartment passes only with `Math` (in addition to `BigNumber`) endowed. Dafny's emitted runtime calls `bignumber.js`, which invokes `Math.random()` during initialization — SES's secure-mode `Math` removes `random`, so without the endowment the bundle imports fail at load. A real deployment should wrap `Math` rather than passing the host's.
 
@@ -27,6 +29,7 @@ Naive list reverse with the theorem reverse(reverse(xs)) ≡ xs. Dafny proves it
 | Dafny | 162,760 | _dafny, _System, Reverse, _module, default | imported keys: _dafny, _System, Reverse, _module, default |
 | Agda | 38,456 | reverse, showList, putStrLn, main, default, _++_ | imported keys: reverse, showList, putStrLn, main, default, _++_ |
 | Idris2 | 17,596 | reverse, default | imported keys: reverse, default |
+| Coq | — | — | not attempted |
 
 ---
 
@@ -322,4 +325,96 @@ function Reverse_main($0) {
  return Prelude_IO_prim__putStr((Prelude_Show_show_Show_x28Listx20x24ax29({a1: x => Prelude_Show_show_Show_Int(x), a2: d => x => Prelude_Show_showPrec_Show_Int(d, x)}, Reverse_myReverse({a1: 1, a2: {a1: 2, a2: {a1: 3, a2: {a1: 4, a2: {h: 0}}}}}))+'\n'), $0);
 }
 try{__mainExpression_0()}catch(e){if(e instanceof IdrisError){console.log('ERROR: ' + e.message)}else{throw e} }
+```
+
+---
+
+## Coq
+
+**Source** (`problems/reverse/coq/Reverse.v`):
+
+```coq
+(* List reverse with the involution proof, and extraction to OCaml. *)
+
+Require Import Coq.Lists.List.
+Require Import Coq.extraction.Extraction.
+Require Import Coq.extraction.ExtrOcamlBasic.
+Require Import Coq.extraction.ExtrOcamlNatInt.
+
+Import ListNotations.
+
+Fixpoint myrev {A : Type} (xs : list A) : list A :=
+  match xs with
+  | []      => []
+  | x :: xs' => myrev xs' ++ [x]
+  end.
+
+Lemma myrev_app : forall (A : Type) (xs ys : list A),
+  myrev (xs ++ ys) = myrev ys ++ myrev xs.
+Proof.
+  induction xs as [|x xs IH]; intros ys; simpl.
+  - rewrite app_nil_r. reflexivity.
+  - rewrite IH. rewrite app_assoc. reflexivity.
+Qed.
+
+Theorem myrev_involutive : forall (A : Type) (xs : list A),
+  myrev (myrev xs) = xs.
+Proof.
+  induction xs as [|x xs IH]; simpl.
+  - reflexivity.
+  - rewrite myrev_app. simpl. rewrite IH. reflexivity.
+Qed.
+
+Extraction Language OCaml.
+Extraction "reverse.ml" myrev.
+
+```
+
+**Build:** exit `0`
+
+**Run:** exit `0` — stdout: `reverse([1,2,3,4]) = [4, 3, 2, 1]`
+
+**Generated JS — user code only** (from `reverse.js`, 71,239 bytes total, 1,658 shown; runtime prelude elided):
+
+```js
+// (js_of_ocaml bundles the entire OCaml runtime + extracted user
+//  code into a single closure with mangled identifiers; symbol-
+//  based extraction is not feasible. Showing the bundle tail —
+//  the verified `fact` is the recursive `function bM(a){ … }`
+//  near the end.)
+//
+// …
+1:var
+f=c[2],g=c[1];if(0===f[0]){var
+i=f[1];T(a,g);aG(a,"@{");c=i}else{var
+j=f[1];T(a,g);aG(a,"@[");c=j}break;case
+6:var
+m=c[2];T(a,c[1]);return D(m,a);case
+7:T(a,c[1]);ap(a);return;case
+8:var
+n=c[2];T(a,c[1]);return at(n);case
+2:case
+4:var
+k=c[2];T(a,c[1]);return aG(a,k);default:var
+l=c[2];T(a,c[1]);ed(a,l);return}}}function
+bM(a,b){if(!a)return b;var
+c=bM(a[2],b);return[0,a[1],c]}function
+bN(a){if(!a)return a;var
+b=[0,a[1],0];return bM(bN(a[2]),b)}var
+dx=function(a,b){if(!b)return e;if(!b[2])return b[1];var
+j=r(a);a:{var
+d=0,c=b,p=0;for(;;){if(!c){var
+n=d;break a}var
+k=c[1];if(!c[2])break;var
+l=c[2],m=(r(k)+j|0)+d|0;if(d<=m){d=m;c=l}else{d=at("String.concat");c=l}}var
+n=r(k)+d|0}var
+i=A(n),h=p,g=b;for(;;){if(g){var
+f=g[1];if(g[2]){var
+o=g[2];am(f,0,i,h,r(f));am(a,0,i,h+r(f)|0,j);h=(h+r(f)|0)+j|0;g=o;continue}am(f,0,i,h,r(f))}return F(i)}}(bd,function(a,b){if(!b)return 0;var
+f=b[2],h=b[1];if(!f)return[0,D(a,h),0];var
+m=f[2],n=f[1],o=D(a,h),l=24029,i=[0,D(a,n),l],e=i,d=1,c=m;for(;;){if(c){var
+g=c[2],j=c[1];if(g){var
+p=g[2],q=g[1],r=D(a,j),k=[0,D(a,q),l];e[d+1]=[0,r,k];e=k;d=1;c=p;continue}e[d+1]=[0,D(a,j),0]}else
+e[d+1]=0;return[0,o,i]}}(function(a){return e+a},bN([0,1,[0,2,[0,3,[0,4,0]]]])));D(i(function(a){T(c6,a);return 0},0,[0,[11,"reverse([1,2,3,4]) = [",[2,0,[11,"]\n",0]]],"reverse([1,2,3,4]) = [%s]\n"][1]),dx);bH(0);return}(globalThis));
+
 ```

@@ -167,6 +167,42 @@ Smaller papercut: requiring an Agda module *executes* its embedded `main`
 as a side effect because the emitter appends `exports["main"](a => ({}))`
 at the bottom of the entry file. Easy to strip, easy to forget.
 
+### Coq (via extraction + js_of_ocaml)
+
+**Excels at: mature proof automation (tactics, `nia`, `auto`, `ring`); stdlib depth; an extraction story that's been battle-tested for decades.**
+
+Coq is the only one of the four tools here that doesn't have a *native*
+JS backend — you extract to OCaml first, then run `js_of_ocaml` to
+produce JS. The pipeline is straightforward (`generator/coq-build.sh`
+wires it up in five commands) and the source-level experience is
+familiar: `Fixpoint`, `Inductive`, `Lemma`, `Qed`, tactics. The
+sum-formula closed form is the same shape as the Idris2 proof — one
+induction, one rewrite of the IH, then `nia` closes the algebra. The
+insertion-sort proof in
+[`problems/insertion-sort/coq/InsertionSort.v`](./problems/insertion-sort/coq/InsertionSort.v)
+mirrors the Agda version line-for-line (custom `LowerBound` and
+`Sorted` predicates, structural induction).
+
+We pin **Coq 8.9.1**, matching what
+[agoric-labs/jesc24](https://github.com/agoric-labs/jesc24) targets;
+this is the version that future capability-pattern ports in this repo
+will lean on.
+
+**Doesn't handle well: the two-stage compile is the dominant cost in
+the output.**
+
+The js_of_ocaml runtime is ~60 KB on its own; even a 30-line `factorial`
+ships a 70 KB bundle. Identifier names are mangled by the optimizer
+(`fact` becomes `bM`), so the "user-relevant slice" extractor in
+`generator/extract.js` falls back to showing the bundle *tail* —
+there's no clean way to map JS back to Coq source. The output uses
+`TextDecoder` for string handling, which means raw
+`Compartment.evaluate()` fails under SES until `TextDecoder` is endowed
+(parallel to the Dafny + `Math` situation). And there's no
+`module.exports` surface at all — js_of_ocaml's output is a
+self-running closure, much like Idris2's, but without even mangled
+symbol access from outside.
+
 ### Idris2
 
 **Excels at: practical dependently-typed programming, FFI-in, readable output.**
@@ -221,11 +257,11 @@ but Agda's `require('./jAgda.X.js').sort(...)` it ain't.
 
 ### One-line summary
 
-| | Dafny | Agda | Idris2 |
-| --- | --- | --- | --- |
-| **Best at** | automated proofs over imperative code; algebraic reasoning | elegant constructive proofs; dependent types as the only abstraction tool | dependently-typed *programming* with a clean FFI; concise rewrites against `Data.Nat` |
-| **Worst at** | producing JS you can call as a library; expressing dependent types | producing executables / non-curried JS APIs; ad-hoc arithmetic without a stdlib | dependent-proof ergonomics under QTT erasure; exporting symbols for JS hosts |
-| **See it in:** | `insertion-sort/dafny/*` (auto-discharged multiset), `sum-formula/dafny/*` (4-line proof) | `insertion-sort/agda/*` (clean inference rules), `vec-zipwith/agda/*` (no length-mismatch case) | `vec-zipwith/idris2/*` (same Vec elegance), `sum-formula/idris2/*` (5-line rewrite chain) |
+| | Dafny | Agda | Idris2 | Coq |
+| --- | --- | --- | --- | --- |
+| **Best at** | automated proofs over imperative code; algebraic reasoning | elegant constructive proofs; dependent types as the only abstraction tool | dependently-typed *programming* with a clean FFI; concise rewrites against `Data.Nat` | mature tactic automation; deep stdlib; battle-tested extraction |
+| **Worst at** | producing JS you can call as a library; expressing dependent types | producing executables / non-curried JS APIs; ad-hoc arithmetic without a stdlib | dependent-proof ergonomics under QTT erasure; exporting symbols for JS hosts | two-stage pipeline cost (60 KB js_of_ocaml runtime); mangled output; no library export |
+| **See it in:** | `insertion-sort/dafny/*` (auto-discharged multiset), `sum-formula/dafny/*` (4-line proof) | `insertion-sort/agda/*` (clean inference rules), `vec-zipwith/agda/*` (no length-mismatch case) | `vec-zipwith/idris2/*` (same Vec elegance), `sum-formula/idris2/*` (5-line rewrite chain) | `insertion-sort/coq/*` (custom `Sorted` predicate), `sum-formula/coq/*` (one rewrite + `nia`) |
 
 Pick Dafny when you want to push proof obligations through an SMT
 solver. Pick Agda when the proof is the artifact and you want it to

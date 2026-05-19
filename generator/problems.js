@@ -154,6 +154,7 @@ const PROBLEMS = [
       dafny('problems/reverse/dafny', 'reverse([1,2,3,4]) = [4, 3, 2, 1]'),
       agda('problems/reverse/agda', '[4,3,2,1]'),
       idris2('problems/reverse/idris2', 'reverse', '[4, 3, 2, 1]'),
+      coq('problems/reverse/coq', 'reverse([1,2,3,4]) = [4, 3, 2, 1]'),
     ],
   },
   {
@@ -168,6 +169,7 @@ const PROBLEMS = [
       dafny('problems/insertion-sort/dafny', 'sort([3,1,4,1,5,9,2,6]) = [1, 1, 2, 3, 4, 5, 6, 9]'),
       agda('problems/insertion-sort/agda', '[1,1,2,3,4,5,6,9]'),
       idris2('problems/insertion-sort/idris2', 'insertionsort', '[1, 1, 2, 3, 4, 5, 6, 9]'),
+      coq('problems/insertion-sort/coq', 'sort([3,1,4,1,5,9,2,6]) = [1, 1, 2, 3, 4, 5, 6, 9]'),
     ],
   },
   {
@@ -183,6 +185,7 @@ const PROBLEMS = [
       dafny('problems/vec-zipwith/dafny', 'zipWith(+, [1,2,3], [10,20,30]) = [11, 22, 33]'),
       agda('problems/vec-zipwith/agda', '[11,22,33]'),
       idris2('problems/vec-zipwith/idris2', 'veczipwith', '[11, 22, 33]'),
+      coq('problems/vec-zipwith/coq', 'zipWith(+, [1,2,3], [10,20,30]) = [11, 22, 33]'),
     ],
   },
   {
@@ -198,6 +201,7 @@ const PROBLEMS = [
       dafny('problems/sum-formula/dafny',  'sum(0..10) = 55'),
       agda('problems/sum-formula/agda',    'sum(0..10) = 55'),
       idris2('problems/sum-formula/idris2', 'sumformula', 'sum(0..10) = 55'),
+      coq('problems/sum-formula/coq',       'sum(0..10) = 55'),
     ],
   },
 ];
