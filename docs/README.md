@@ -7,6 +7,8 @@ This directory holds an auto-generated, per-problem comparison of Dafny, Agda, a
 - [Factorial (with positivity proof)](./factorial.md)
 - [List reverse (with reverse-reverse-identity proof)](./reverse.md)
 - [Insertion sort (with sortedness proof)](./insertion-sort.md)
+- [Vec.zipWith (length-indexed vectors)](./vec-zipwith.md)
+- [Triangular-number closed form (2·Σ n = n·(n+1))](./sum-formula.md)
 
 ## How to regenerate
 

@@ -204,6 +204,36 @@ const TASKS = [
           /\b([A-Z]\w*_sort)\b/, 'sort') },
     ],
   },
+  {
+    problem: 'vec-zipwith',
+    impls: [
+      { tool: 'Dafny', kind: 'dafny', prep: () => prepareDafny(
+          path.join(ROOT, 'problems/vec-zipwith/dafny'),
+          path.join(BUNDLES_ROOT, 'vec-zipwith/dafny')) },
+      { tool: 'Agda',  kind: 'agda',  prep: () => prepareAgda(
+          path.join(ROOT, 'problems/vec-zipwith/agda'),
+          path.join(BUNDLES_ROOT, 'vec-zipwith/agda')) },
+      { tool: 'Idris2', kind: 'idris2', prep: () => prepareIdris2(
+          path.join(ROOT, 'problems/vec-zipwith/idris2/build/exec/veczipwith'),
+          path.join(BUNDLES_ROOT, 'vec-zipwith/idris2'),
+          /\b([A-Z]\w*_zipWith)\b/, 'zipWith') },
+    ],
+  },
+  {
+    problem: 'sum-formula',
+    impls: [
+      { tool: 'Dafny', kind: 'dafny', prep: () => prepareDafny(
+          path.join(ROOT, 'problems/sum-formula/dafny'),
+          path.join(BUNDLES_ROOT, 'sum-formula/dafny')) },
+      { tool: 'Agda',  kind: 'agda',  prep: () => prepareAgda(
+          path.join(ROOT, 'problems/sum-formula/agda'),
+          path.join(BUNDLES_ROOT, 'sum-formula/agda')) },
+      { tool: 'Idris2', kind: 'idris2', prep: () => prepareIdris2(
+          path.join(ROOT, 'problems/sum-formula/idris2/build/exec/sumformula'),
+          path.join(BUNDLES_ROOT, 'sum-formula/idris2'),
+          /\b([A-Z]\w*_sum)\b/, 'sum') },
+    ],
+  },
 ];
 
 const all = {};

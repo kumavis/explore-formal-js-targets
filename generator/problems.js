@@ -140,6 +140,36 @@ const PROBLEMS = [
       idris2('problems/insertion-sort/idris2', 'insertionsort', '[1, 1, 2, 3, 4, 5, 6, 9]'),
     ],
   },
+  {
+    id: 'vec-zipwith',
+    title: 'Vec.zipWith (length-indexed vectors)',
+    description:
+      'A showcase for **dependent types**: `zipWith` on a length-indexed `Vec n A` '
+      + 'has no "lengths don\'t match" case to handle — Agda and Idris2 eliminate '
+      + 'that possibility at compile time. Dafny has no equivalent (no type-level '
+      + '`Nat` indices), so it expresses the same guarantee as a runtime '
+      + 'precondition `requires |xs| == |ys|`.',
+    implementations: [
+      dafny('problems/vec-zipwith/dafny', 'zipWith(+, [1,2,3], [10,20,30]) = [11, 22, 33]'),
+      agda('problems/vec-zipwith/agda', '[11,22,33]'),
+      idris2('problems/vec-zipwith/idris2', 'veczipwith', '[11, 22, 33]'),
+    ],
+  },
+  {
+    id: 'sum-formula',
+    title: 'Triangular-number closed form (2·Σ n = n·(n+1))',
+    description:
+      'A showcase for **SMT-discharged arithmetic**: Dafny proves the closed form '
+      + 'in a four-line lemma because the SMT backend handles the nonlinear step. '
+      + 'Idris2 needs a 5-line `rewrite` chain over `Data.Nat` lemmas. Agda, with '
+      + 'no algebraic-lemma stdlib in the nixpkgs install, has to prove +-comm, '
+      + '+-assoc, *-suc, *-comm itself first — about 60 lines all-in.',
+    implementations: [
+      dafny('problems/sum-formula/dafny',  'sum(0..10) = 55'),
+      agda('problems/sum-formula/agda',    'sum(0..10) = 55'),
+      idris2('problems/sum-formula/idris2', 'sumformula', 'sum(0..10) = 55'),
+    ],
+  },
 ];
 
 module.exports = { PROBLEMS, ROOT };

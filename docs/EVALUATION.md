@@ -19,6 +19,12 @@ Auto-generated summary of three dimensions:
 | insertion-sort | Dafny | 78 | 1,703 + 30,842 = 32,545 | **yes** | ✅ | ✅ | ❌ | ✅ | `console` + `BigNumber` + `Math` |
 | insertion-sort | Agda | 92 | 6,098 + 14,759 = 20,857 | **yes** | ✅ | ✅ | ❌ | ✅ | `console` |
 | insertion-sort | Idris2 | 79 | 1,477 + 10,840 = 12,317 | no | ✅ | ✅ | ✅ | ✅ | `console` |
+| vec-zipwith | Dafny | 28 | 1,749 + 30,839 = 32,588 | **yes** | ✅ | ✅ | ❌ | ✅ | `console` + `BigNumber` + `Math` |
+| vec-zipwith | Agda | 52 | 2,052 + 14,759 = 16,811 | **yes** | ✅ | ✅ | ❌ | ✅ | `console` |
+| vec-zipwith | Idris2 | 33 | 605 + 11,014 = 11,619 | no | ✅ | ✅ | ✅ | ✅ | `console` |
+| sum-formula | Dafny | 29 | 1,598 + 30,839 = 32,437 | **yes** | ✅ | ✅ | ❌ | ✅ | `console` + `BigNumber` + `Math` |
+| sum-formula | Agda | 116 | 1,780 + 14,926 = 16,706 | **yes** | ✅ | ✅ | ❌ | ✅ | `console` |
+| sum-formula | Idris2 | 44 | 263 + 10,102 = 10,365 | no | ✅ | ✅ | ✅ | ✅ | `console` |
 
 Legend: ✅ pass, ❌ fail, — not applicable.
 

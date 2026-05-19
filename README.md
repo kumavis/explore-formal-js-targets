@@ -87,7 +87,13 @@ proofs of permutation are nontrivial without a stdlib for it.
 
 Dafny also handles arithmetic, quantifier reasoning, and loop invariants
 in stride — `factorial(n) >= 1` needed zero proof annotations beyond the
-`ensures` clause.
+`ensures` clause. The triangular-number closed form
+[`problems/sum-formula/dafny/SumFormula.dfy`](./problems/sum-formula/dafny/SumFormula.dfy)
+is the sharpest example: Dafny proves `2 * Σ n = n·(n+1)` in
+**four lines of body**, while the Agda port needs ~60 lines because
+nothing about commutativity, associativity, distributivity, or `*`
+comes pre-proven and the nixpkgs Agda install ships only the bare
+`Agda.Builtin.*` modules.
 
 **Doesn't handle well: producing JS you'd want to call from outside.**
 
@@ -111,7 +117,7 @@ it doesn't it's opaque.
 
 ### Agda
 
-**Excels at: elegant constructive proofs, decision procedures via inductive families.**
+**Excels at: elegant constructive proofs, decision procedures via inductive families, dependent types.**
 
 The Agda insertion sort at
 [`problems/insertion-sort/agda/InsertionSort.agda`](./problems/insertion-sort/agda/InsertionSort.agda)
@@ -126,6 +132,14 @@ For propositional reasoning (the `reverse(reverse xs) ≡ xs` theorem in
 [`problems/reverse/agda/Reverse.agda`](./problems/reverse/agda/Reverse.agda)),
 the standard `rewrite ... | ...` chain is concise and easy to follow.
 Unicode identifiers (`≤*`, `∷`, `≡`) keep the math-paper resemblance.
+
+The dependent-vector showcase
+[`problems/vec-zipwith/agda/VecZipWith.agda`](./problems/vec-zipwith/agda/VecZipWith.agda)
+is the other side of the same strength: `zipWith` over `Vec A n`
+has exactly two cases (`[] []` and `(x∷xs) (y∷ys)`) because the type
+already rules out length mismatches. The Dafny equivalent has to
+encode that guarantee as a runtime precondition every caller is
+obligated to discharge.
 
 **Doesn't handle well: producing executables and interop with the outside world.**
 
@@ -168,6 +182,13 @@ three that runs unmodified in a SES `Compartment.evaluate(source)`.
 syntax of the three — it composes with the type system (you state the
 Idris2 type and the JS expression, and Idris2 wires them up).
 
+For proofs that *do* need stdlib support, Idris2 typically beats Agda
+because `Data.Nat` ships the algebraic lemmas (`multCommutative`,
+`multDistributesOverPlusLeft`, …). The closed-form proof in
+[`problems/sum-formula/idris2/SumFormula.idr`](./problems/sum-formula/idris2/SumFormula.idr)
+is a 5-line rewrite chain that finishes the same theorem Agda needs
+~60 lines (and seven from-scratch lemmas) to close.
+
 **Doesn't handle well: dependent-proof ergonomics (QTT erasure), library exports for JS callers.**
 
 Idris2's Quantitative Type Theory means implicit arguments are
@@ -195,8 +216,9 @@ but Agda's `require('./jAgda.X.js').sort(...)` it ain't.
 
 | | Dafny | Agda | Idris2 |
 | --- | --- | --- | --- |
-| **Best at** | automated proofs over imperative code | elegant constructive proofs | dependently-typed *programming* with a clean FFI |
-| **Worst at** | producing JS you can call as a library | producing executables / non-curried JS APIs | dependent-proof ergonomics under QTT erasure |
+| **Best at** | automated proofs over imperative code; algebraic reasoning | elegant constructive proofs; dependent types as the only abstraction tool | dependently-typed *programming* with a clean FFI; concise rewrites against `Data.Nat` |
+| **Worst at** | producing JS you can call as a library; expressing dependent types | producing executables / non-curried JS APIs; ad-hoc arithmetic without a stdlib | dependent-proof ergonomics under QTT erasure; exporting symbols for JS hosts |
+| **See it in:** | `insertion-sort/dafny/*` (auto-discharged multiset), `sum-formula/dafny/*` (4-line proof) | `insertion-sort/agda/*` (clean inference rules), `vec-zipwith/agda/*` (no length-mismatch case) | `vec-zipwith/idris2/*` (same Vec elegance), `sum-formula/idris2/*` (5-line rewrite chain) |
 
 Pick Dafny when you want to push proof obligations through an SMT
 solver. Pick Agda when the proof is the artifact and you want it to
