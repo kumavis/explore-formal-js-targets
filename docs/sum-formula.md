@@ -24,9 +24,9 @@ A showcase for **SMT-discharged arithmetic**: Dafny proves the closed form in a 
 
 > **Coq bundling requirement:** js_of_ocaml's runtime reaches for `TextDecoder`/`TextEncoder` and the full set of typed-array constructors (`Float32Array`, `Int32Array`, `ArrayBuffer`, `DataView`, …); SES Compartments don't expose those by default, so they must be endowed. Even with those endowed, the bundle still fails import — see the Coq footnote below.
 
-> **Coq Compartment failure:** js_of_ocaml's runtime mutates host globals during initialization (e.g. assigning `jsoo_create_file` onto a top-level object). SES `lockdown()` freezes every standard intrinsic, so the assignment throws `Cannot add property …, object is not extensible`. This is a fundamental incompatibility: even with comprehensive endowments, the bundle does not import into a sealed Compartment without either (a) patching the js_of_ocaml runtime to skip global mutation, or (b) relaxing SES (`overrideTaming: 'min'` and friends), neither of which is in scope here.
+> **Coq Compartment failure (importBundle path):** js_of_ocaml's runtime writes a `jsoo_create_file` helper onto `globalThis` during init. `@endo/import-bundle` creates its Compartment with a **non-extensible globalThis**, so the assignment throws `Cannot add property …, object is not extensible`. This is *not* a fundamental SES restriction — a hand-rolled `new Compartment(endowments).evaluate(source)` *does* allow the assignment (its globalThis is extensible), and the Coq bundle runs end-to-end there with the same endowments. The blocker is therefore `@endo/import-bundle`'s policy, not `lockdown()` itself.
 
-> **Coq raw `Compartment.evaluate()` failure:** the same SES-vs-js_of_ocaml mismatch shows up earlier here than in the bundled case — the runtime asks for `TextDecoder` before anything else and the default Compartment doesn't expose it. See the "Coq bundling requirement" note above for the deeper story.
+> **Coq raw `Compartment.evaluate()` failure (default endowments):** the runtime asks for `TextDecoder` before anything else and the default Compartment doesn't expose it. This is a Compartment-globals omission (same shape as Dafny needing `Math` endowed), fixed by including the constructors listed in the Compartment-endowments column.
 
 ### Bundle details
 

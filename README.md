@@ -204,19 +204,21 @@ there's no clean way to map JS back to Coq source. There's no
 self-running closure, much like Idris2's, but without even mangled
 symbol access from outside.
 
-The SES story is worse than for the other three. Coq via js_of_ocaml
-is the only output in this repo that **does not import into a SES
-Compartment even with comprehensive endowments**: the runtime reaches
-for `TextDecoder` / `TextEncoder` and the full set of typed-array
+The SES story has two layers. The js_of_ocaml runtime reaches for
+`TextDecoder` / `TextEncoder` and the full set of typed-array
 constructors (`Float32Array`, `Int32Array`, `ArrayBuffer`, `DataView`,
-…) — all of which the SES Compartment doesn't expose by default and
-which must be endowed individually — *and* it then mutates host
-globals at init (assigning `jsoo_create_file` onto a frozen object),
-failing with `Cannot add property …, object is not extensible`. The
+…) — none of which the default Compartment exposes, so they must all
+be endowed (a packaging issue, the same shape as Dafny needing `Math`).
+The runtime also writes a `jsoo_create_file` helper onto `globalThis`
+during init, which `@endo/import-bundle`'s Compartment refuses
+(`Cannot add property …, object is not extensible`). For a long time
+I thought this second part was a fundamental SES incompatibility, but
+it isn't: vanilla `new Compartment(endowments)` *does* allow that
+assignment (its globalThis is extensible), and the Coq bundle does run
+end-to-end through that path with the same endowments. The blocker is
+specifically `@endo/import-bundle`'s stricter Compartment policy. The
 per-problem docs ([docs/factorial.md](./docs/factorial.md) and friends)
-record this with a footnote on every cell. Getting Coq through a SES
-Compartment would require either a patched js_of_ocaml runtime that
-doesn't mutate globals or a relaxed `lockdown()` configuration.
+record this with footnotes on each Coq cell.
 
 ### Idris2
 

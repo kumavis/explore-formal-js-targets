@@ -101,16 +101,16 @@ function renderProblem(p) {
     }
     lines.push('');
   }
-  // Coq-specific extra footnote: explain the deeper SES incompatibility.
+  // Coq-specific extra footnote: explain the importBundle-vs-vanilla-Compartment split.
   const coqBundle = bundleFor(p.problem.id, 'Coq');
   if (coqBundle && coqBundle.importError && coqBundle.importError.includes('not extensible')) {
-    lines.push('> **Coq Compartment failure:** js_of_ocaml\'s runtime mutates host globals during initialization (e.g. assigning `jsoo_create_file` onto a top-level object). SES `lockdown()` freezes every standard intrinsic, so the assignment throws `Cannot add property …, object is not extensible`. This is a fundamental incompatibility: even with comprehensive endowments, the bundle does not import into a sealed Compartment without either (a) patching the js_of_ocaml runtime to skip global mutation, or (b) relaxing SES (`overrideTaming: \'min\'` and friends), neither of which is in scope here.');
+    lines.push('> **Coq Compartment failure (importBundle path):** js_of_ocaml\'s runtime writes a `jsoo_create_file` helper onto `globalThis` during init. `@endo/import-bundle` creates its Compartment with a **non-extensible globalThis**, so the assignment throws `Cannot add property …, object is not extensible`. This is *not* a fundamental SES restriction — a hand-rolled `new Compartment(endowments).evaluate(source)` *does* allow the assignment (its globalThis is extensible), and the Coq bundle runs end-to-end there with the same endowments. The blocker is therefore `@endo/import-bundle`\'s policy, not `lockdown()` itself.');
     lines.push('');
   }
-  // Coq raw-Compartment failure mentions TextDecoder for the same root cause.
+  // Coq raw-Compartment failure mentions TextDecoder.
   const coqRes = p.results.find((r) => r.language === 'Coq');
   if (coqRes?.ses?.compartmentEvaluate?.stderr?.includes('TextDecoder')) {
-    lines.push('> **Coq raw `Compartment.evaluate()` failure:** the same SES-vs-js_of_ocaml mismatch shows up earlier here than in the bundled case — the runtime asks for `TextDecoder` before anything else and the default Compartment doesn\'t expose it. See the "Coq bundling requirement" note above for the deeper story.');
+    lines.push('> **Coq raw `Compartment.evaluate()` failure (default endowments):** the runtime asks for `TextDecoder` before anything else and the default Compartment doesn\'t expose it. This is a Compartment-globals omission (same shape as Dafny needing `Math` endowed), fixed by including the constructors listed in the Compartment-endowments column.');
     lines.push('');
   }
   // Per-cell bundle details
